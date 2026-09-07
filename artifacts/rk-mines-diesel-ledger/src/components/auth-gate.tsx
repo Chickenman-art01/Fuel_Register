@@ -65,6 +65,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
   const [signedIn, setSignedIn] = useState(false);
   const [passkeyEnabled, setPasskeyEnabled] = useState(() => typeof window !== 'undefined' && Boolean(localStorage.getItem(passkeyStorageKey)));
+  const [passkeyLocked, setPasskeyLocked] = useState(false);
   const [passkeyBusy, setPasskeyBusy] = useState(false);
   const [setupDismissed, setSetupDismissed] = useState(false);
   const [email, setEmail] = useState('');
@@ -77,12 +78,8 @@ export function AuthGate({ children }: { children: ReactNode }) {
     supabase.auth.getSession().then(async ({ data }) => {
       const storedPasskey = localStorage.getItem(passkeyStorageKey);
       if (data.session && storedPasskey) {
-        try {
-          await verifyPasskey();
-          setSignedIn(true);
-        } catch {
-          setSignedIn(false);
-        }
+        setPasskeyLocked(true);
+        setSignedIn(false);
       } else {
         setSignedIn(Boolean(data.session));
       }
@@ -107,7 +104,22 @@ export function AuthGate({ children }: { children: ReactNode }) {
     if (result.error) setMessage(result.error.message);
     else {
       setSignedIn(true);
+      setPasskeyLocked(false);
       if (mode === 'sign-up') setMessage('Account created. Check your email if confirmation is enabled.');
+    }
+  };
+
+  const unlockWithFingerprint = async () => {
+    setPasskeyBusy(true);
+    setMessage('');
+    try {
+      await verifyPasskey();
+      setPasskeyLocked(false);
+      setSignedIn(true);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Fingerprint verification failed.');
+    } finally {
+      setPasskeyBusy(false);
     }
   };
 
@@ -145,6 +157,15 @@ export function AuthGate({ children }: { children: ReactNode }) {
     <main className="grid min-h-screen place-items-center bg-background px-5 py-10">
       <section className="w-full max-w-md rounded-2xl border border-card-border bg-card p-6 shadow-[0_12px_35px_rgba(40,53,58,.08)]">
         <div className="mb-6 flex items-center gap-3"><span className="grid size-10 place-items-center rounded-xl bg-primary/15 text-primary"><ShieldCheck size={20} /></span><div><h1 className="font-extrabold">RK Mines Fuel Ledger</h1><p className="text-xs text-muted-foreground">Secure register access</p></div></div>
+        {passkeyLocked && (
+          <div className="mb-5 rounded-xl border border-primary/25 bg-primary/5 p-4 text-center">
+            <Fingerprint className="mx-auto mb-2 text-primary" size={28} />
+            <p className="text-sm font-bold">Unlock with fingerprint</p>
+            <p className="mt-1 text-xs text-muted-foreground">Use your phone fingerprint, PIN, or screen lock.</p>
+            <button type="button" onClick={unlockWithFingerprint} disabled={passkeyBusy} className="mt-3 flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-primary font-bold text-primary-foreground disabled:opacity-60"><Fingerprint size={16} />{passkeyBusy ? 'Checking...' : 'Unlock'}</button>
+            <button type="button" onClick={() => { setPasskeyLocked(false); setMessage(''); }} className="mt-3 text-xs font-bold text-muted-foreground hover:text-foreground">Use password instead</button>
+          </div>
+        )}
         <form onSubmit={submit} className="space-y-4">
           <label className="block text-xs font-bold uppercase tracking-[.1em] text-muted-foreground">Email<input required type="email" value={email} onChange={(event) => setEmail(event.target.value)} className="mt-2 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm font-normal normal-case tracking-normal outline-none focus:border-primary" /></label>
           <label className="block text-xs font-bold uppercase tracking-[.1em] text-muted-foreground">Password<input required minLength={6} type="password" value={password} onChange={(event) => setPassword(event.target.value)} className="mt-2 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm font-normal normal-case tracking-normal outline-none focus:border-primary" /></label>
