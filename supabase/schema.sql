@@ -29,6 +29,17 @@ create index if not exists diesel_records_date_idx
 create index if not exists diesel_records_vehicle_idx
   on public.diesel_records (vehicle_id);
 
+alter table public.vehicles enable row level security;
+alter table public.diesel_records enable row level security;
+
+drop policy if exists "authenticated users can manage vehicles" on public.vehicles;
+create policy "authenticated users can manage vehicles"
+  on public.vehicles for all to authenticated using (true) with check (true);
+
+drop policy if exists "authenticated users can manage diesel records" on public.diesel_records;
+create policy "authenticated users can manage diesel records"
+  on public.diesel_records for all to authenticated using (true) with check (true);
+
 -- Starter fleet. Existing vehicle numbers are left untouched.
 insert into public.vehicles (vehicle_no, vehicle_name)
 values

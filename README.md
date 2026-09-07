@@ -129,6 +129,25 @@ The web app is a static Vite build, which Vercel serves well:
   generated API requests.
 4. Add `DATABASE_URL` only to the API service, never to the Vercel frontend.
 
+### Supabase-only backend
+The frontend can use Supabase Auth and the Edge Function in
+`supabase/functions/api` instead of the Express service:
+
+```bash
+supabase login
+supabase functions deploy api --project-ref niusvljqjdypixqftods
+```
+
+The function validates Supabase Auth sessions and keeps the existing generated
+API paths (`/vehicles`, `/diesel/summary`, and `/diesel/records`). Set
+`VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in Vercel. The anon key is
+intended for the browser; never put `DATABASE_URL` or a service-role key in a
+`VITE_` variable.
+
+After deploying the function, run the RLS statements in `supabase/schema.sql`
+so direct anonymous table access is disabled. Create the first user through the
+app's sign-up screen or Supabase Authentication.
+
 ### Notes / gotchas carried over from the original build
 - Diesel records keep a running stock balance; each new entry uses the
   latest closing balance as its opening balance.

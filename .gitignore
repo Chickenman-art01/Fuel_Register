@@ -53,3 +53,6 @@ Thumbs.db
 .cache/
 .local/
 .vercel
+
+# Supabase CLI local metadata
+supabase/.temp/
