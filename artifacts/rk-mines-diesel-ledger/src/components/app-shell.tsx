@@ -1,4 +1,4 @@
-import { Fuel, LayoutDashboard, Truck, CircleHelp, Activity } from 'lucide-react';
+import { LayoutDashboard, Truck, CircleHelp, Activity } from 'lucide-react';
 import { Link, useLocation } from 'wouter';
 import type { ReactNode } from 'react';
 
@@ -14,8 +14,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       <header className="sticky top-0 z-40 border-b border-sidebar-border/50 bg-sidebar text-sidebar-foreground shadow-[0_3px_18px_rgba(29,43,49,.12)]">
         <div className="mx-auto flex h-[4.4rem] max-w-[1500px] items-center justify-between px-4 sm:px-7">
           <Link href="/" className="flex items-center gap-3" data-testid="link-brand">
-            <span className="grid size-9 place-items-center rounded-xl bg-primary text-primary-foreground shadow-[3px_3px_0_hsl(34_84%_30%)]">
-              <Fuel size={19} strokeWidth={2.4} />
+            <span className="grid size-9 place-items-center overflow-hidden rounded-full bg-primary shadow-[3px_3px_0_hsl(34_84%_30%)]">
+              <img src="/logo.png" alt="RK Mines" className="size-full object-contain" />
             </span>
             <span className="leading-none">
               <span className="block text-[13px] font-extrabold tracking-[.18em] text-sidebar-foreground">RK MINES</span>
