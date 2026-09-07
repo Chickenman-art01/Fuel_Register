@@ -1,0 +1,327 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: vehicles
+    description: Vehicle master operations
+  - name: diesel
+    description: Diesel issue and purchase register operations
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /vehicles:
+    get:
+      operationId: listVehicles
+      tags: [vehicles]
+      summary: List active vehicles
+      responses:
+        "200":
+          description: Vehicle master list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Vehicle"
+    post:
+      operationId: createVehicle
+      tags: [vehicles]
+      summary: Add a vehicle
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VehicleInput"
+      responses:
+        "201":
+          description: Created vehicle
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Vehicle"
+  /vehicles/{id}:
+    patch:
+      operationId: updateVehicle
+      tags: [vehicles]
+      summary: Update a vehicle
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VehicleUpdate"
+      responses:
+        "200":
+          description: Updated vehicle
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Vehicle"
+    delete:
+      operationId: deleteVehicle
+      tags: [vehicles]
+      summary: Archive a vehicle
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "204":
+          description: Vehicle archived
+  /diesel/summary:
+    get:
+      operationId: getDieselSummary
+      tags: [diesel]
+      summary: Get stock summary and recent activity
+      parameters:
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Diesel stock summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DieselSummary"
+  /diesel/records:
+    get:
+      operationId: listDieselRecords
+      tags: [diesel]
+      summary: List diesel records for a date
+      parameters:
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Diesel records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DieselRecord"
+    post:
+      operationId: createDieselRecord
+      tags: [diesel]
+      summary: Record diesel issue or purchase
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DieselRecordInput"
+      responses:
+        "201":
+          description: Created diesel record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DieselRecord"
+  /diesel/records/{id}:
+    patch:
+      operationId: updateDieselRecord
+      tags: [diesel]
+      summary: Update a diesel record
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DieselRecordInput"
+      responses:
+        "200":
+          description: Updated diesel record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DieselRecord"
+    delete:
+      operationId: deleteDieselRecord
+      tags: [diesel]
+      summary: Delete a diesel record
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "204":
+          description: Diesel record deleted
+components:
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+    Vehicle:
+      type: object
+      required: [id, vehicleNo, vehicleName, active]
+      properties:
+        id:
+          type: integer
+        vehicleNo:
+          type: string
+        vehicleName:
+          type: string
+        active:
+          type: boolean
+    VehicleInput:
+      type: object
+      required: [vehicleNo, vehicleName]
+      properties:
+        vehicleNo:
+          type: string
+          minLength: 1
+        vehicleName:
+          type: string
+          minLength: 1
+    VehicleUpdate:
+      type: object
+      properties:
+        vehicleNo:
+          type: string
+          minLength: 1
+        vehicleName:
+          type: string
+          minLength: 1
+        active:
+          type: boolean
+    DieselRecord:
+      type: object
+      required:
+        - id
+        - date
+        - vehicleId
+        - vehicleNo
+        - vehicleName
+        - openingBalance
+        - reading
+        - dieselIssued
+        - dieselPurchased
+        - closingBalance
+        - operator
+        - issuer
+        - createdAt
+      properties:
+        id:
+          type: integer
+        date:
+          type: string
+          format: date
+        vehicleId:
+          type: integer
+        vehicleNo:
+          type: string
+        vehicleName:
+          type: string
+        openingBalance:
+          type: number
+          format: double
+        reading:
+          type: ["number", "null"]
+          format: double
+        dieselIssued:
+          type: number
+          format: double
+        dieselPurchased:
+          type: number
+          format: double
+        closingBalance:
+          type: number
+          format: double
+        operator:
+          type: string
+        issuer:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    DieselRecordInput:
+      type: object
+      required: [date, vehicleId, dieselIssued, dieselPurchased, operator, issuer]
+      properties:
+        date:
+          type: string
+          format: date
+        vehicleId:
+          type: integer
+        reading:
+          type: ["number", "null"]
+          format: double
+        dieselIssued:
+          type: number
+          format: double
+          minimum: 0
+        dieselPurchased:
+          type: number
+          format: double
+          minimum: 0
+        operator:
+          type: string
+          minLength: 1
+        issuer:
+          type: string
+          minLength: 1
+    DieselSummary:
+      type: object
+      required: [date, openingBalance, totalIssued, totalPurchased, closingBalance, recordCount, recentRecords]
+      properties:
+        date:
+          type: string
+          format: date
+        openingBalance:
+          type: number
+          format: double
+        totalIssued:
+          type: number
+          format: double
+        totalPurchased:
+          type: number
+          format: double
+        closingBalance:
+          type: number
+          format: double
+        recordCount:
+          type: integer
+        recentRecords:
+          type: array
+          items:
+            $ref: "#/components/schemas/DieselRecord"
+
