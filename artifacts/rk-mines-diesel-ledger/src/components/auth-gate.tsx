@@ -1,10 +1,72 @@
 import { FormEvent, ReactNode, useEffect, useState } from 'react';
-import { LogIn, Mail, ShieldCheck } from 'lucide-react';
+import { Fingerprint, LogIn, Mail, ShieldCheck } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+
+const passkeyStorageKey = 'rk-mines-passkey-id';
+
+function toBase64Url(bytes: Uint8Array): string {
+  let binary = '';
+  bytes.forEach((byte) => { binary += String.fromCharCode(byte); });
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function fromBase64Url(value: string): ArrayBuffer {
+  const padded = value.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - value.length % 4) % 4);
+  const binary = atob(padded);
+  return Uint8Array.from(binary, (character) => character.charCodeAt(0)).buffer;
+}
+
+function canUsePasskeys(): boolean {
+  return typeof window !== 'undefined' &&
+    typeof window.PublicKeyCredential !== 'undefined' &&
+    typeof navigator.credentials?.create === 'function' &&
+    typeof navigator.credentials?.get === 'function';
+}
+
+async function registerPasskey(): Promise<void> {
+  if (!canUsePasskeys()) throw new Error('Fingerprint login is not supported on this device.');
+  const credential = await navigator.credentials.create({
+    publicKey: {
+      challenge: crypto.getRandomValues(new Uint8Array(32)),
+      rp: { name: 'RK Mines Diesel Ledger', id: window.location.hostname },
+      user: {
+        id: crypto.getRandomValues(new Uint8Array(16)),
+        name: 'rk-mines-user',
+        displayName: 'RK Mines user',
+      },
+      pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
+      authenticatorSelection: { residentKey: 'required', userVerification: 'required' },
+      timeout: 60000,
+      attestation: 'none',
+    },
+  });
+  if (!(credential instanceof PublicKeyCredential)) throw new Error('Fingerprint setup was cancelled.');
+  localStorage.setItem(passkeyStorageKey, credential.id);
+}
+
+async function verifyPasskey(): Promise<void> {
+  const credentialId = localStorage.getItem(passkeyStorageKey);
+  if (!credentialId || !canUsePasskeys()) throw new Error('Fingerprint login is not available.');
+  const credential = await navigator.credentials.get({
+    publicKey: {
+      challenge: crypto.getRandomValues(new Uint8Array(32)),
+      rpId: window.location.hostname,
+      allowCredentials: [{ type: 'public-key', id: fromBase64Url(credentialId) }],
+      userVerification: 'required',
+      timeout: 60000,
+    },
+  });
+  if (!(credential instanceof PublicKeyCredential) || credential.id !== credentialId) {
+    throw new Error('Fingerprint verification failed.');
+  }
+}
 
 export function AuthGate({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
   const [signedIn, setSignedIn] = useState(false);
+  const [passkeyEnabled, setPasskeyEnabled] = useState(() => typeof window !== 'undefined' && Boolean(localStorage.getItem(passkeyStorageKey)));
+  const [passkeyBusy, setPasskeyBusy] = useState(false);
+  const [setupDismissed, setSetupDismissed] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [mode, setMode] = useState<'sign-in' | 'sign-up'>('sign-in');
@@ -12,12 +74,23 @@ export function AuthGate({ children }: { children: ReactNode }) {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setSignedIn(Boolean(data.session));
+    supabase.auth.getSession().then(async ({ data }) => {
+      const storedPasskey = localStorage.getItem(passkeyStorageKey);
+      if (data.session && storedPasskey) {
+        try {
+          await verifyPasskey();
+          setSignedIn(true);
+        } catch {
+          setSignedIn(false);
+        }
+      } else {
+        setSignedIn(Boolean(data.session));
+      }
       setReady(true);
     });
-    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSignedIn(Boolean(session));
+    const { data } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT') setSignedIn(false);
+      if (event === 'SIGNED_IN' && !localStorage.getItem(passkeyStorageKey)) setSignedIn(true);
       setReady(true);
     });
     return () => data.subscription.unsubscribe();
@@ -32,11 +105,41 @@ export function AuthGate({ children }: { children: ReactNode }) {
       : await supabase.auth.signUp({ email, password });
     setBusy(false);
     if (result.error) setMessage(result.error.message);
-    else if (mode === 'sign-up') setMessage('Account created. Check your email if confirmation is enabled.');
+    else {
+      setSignedIn(true);
+      if (mode === 'sign-up') setMessage('Account created. Check your email if confirmation is enabled.');
+    }
+  };
+
+  const setupFingerprint = async () => {
+    setPasskeyBusy(true);
+    setMessage('');
+    try {
+      await registerPasskey();
+      setPasskeyEnabled(true);
+      setSetupDismissed(false);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Fingerprint setup failed.');
+    } finally {
+      setPasskeyBusy(false);
+    }
   };
 
   if (!ready) return <div className="grid min-h-screen place-items-center bg-background text-sm text-muted-foreground">Loading secure session...</div>;
-  if (signedIn) return <>{children}</>;
+  if (signedIn) return (
+    <>
+      {!passkeyEnabled && !setupDismissed && (
+        <aside className="fixed bottom-4 left-4 right-4 z-50 flex items-center justify-between gap-3 rounded-xl border border-primary/30 bg-card p-3 text-xs shadow-lg sm:left-auto sm:max-w-md">
+          <span className="flex items-center gap-2"><Fingerprint size={18} className="shrink-0 text-primary" />Enable fingerprint unlock on this device?</span>
+          <span className="flex shrink-0 gap-2">
+            <button type="button" onClick={() => setSetupDismissed(true)} className="font-semibold text-muted-foreground">Later</button>
+            <button type="button" onClick={setupFingerprint} disabled={passkeyBusy} className="rounded-md bg-primary px-2.5 py-1.5 font-bold text-primary-foreground disabled:opacity-60">{passkeyBusy ? 'Setting up...' : 'Enable'}</button>
+          </span>
+        </aside>
+      )}
+      {children}
+    </>
+  );
 
   return (
     <main className="grid min-h-screen place-items-center bg-background px-5 py-10">
