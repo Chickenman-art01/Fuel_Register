@@ -31,7 +31,7 @@ import {
   getUpdateDieselRecordMutationOptions,
   getUpdateVehicleMutationOptions,
 } from '@workspace/api-client-react';
-import { addOfflineQueue, listOfflineQueue, readCache, removeOfflineQueueItem, writeCache } from './offline-store';
+import { addOfflineQueue, listOfflineQueue, readCache, removeOfflineQueueItem, removeQueuedCreate, updateQueuedCreate, writeCache } from './offline-store';
 
 const vehicleCacheKey = 'vehicles';
 const recordsCacheKey = (date: string) => `diesel-records:${date}`;
@@ -178,7 +178,7 @@ export function useOfflineCreateVehicle() {
       } catch (error) {
         if (!shouldQueue(error)) throw error;
         const result = await optimisticVehicle(data);
-        await addOfflineQueue('createVehicle', data);
+        await addOfflineQueue('createVehicle', { temporaryId: result.id, data });
         return result;
       }
     },
@@ -195,7 +195,11 @@ export function useOfflineUpdateVehicle() {
         return result;
       } catch (error) {
         if (!shouldQueue(error)) throw error;
-        if (id < 0) return optimisticVehicleUpdate(id, data);
+        if (id < 0) {
+          const result = await optimisticVehicleUpdate(id, data);
+          await updateQueuedCreate('createVehicle', id, data);
+          return result;
+        }
         const result = await optimisticVehicleUpdate(id, data);
         await addOfflineQueue('updateVehicle', { id, data });
         return result;
@@ -212,7 +216,11 @@ export function useOfflineDeleteVehicle() {
         await deleteVehicle(id);
       } catch (error) {
         if (!shouldQueue(error)) throw error;
-        if (id < 0) return optimisticVehicleDelete(id);
+        if (id < 0) {
+          await optimisticVehicleDelete(id);
+          await removeQueuedCreate('createVehicle', id);
+          return;
+        }
         await optimisticVehicleDelete(id);
         await addOfflineQueue('deleteVehicle', { id });
       }
@@ -231,7 +239,7 @@ export function useOfflineCreateDieselRecord() {
       } catch (error) {
         if (!shouldQueue(error)) throw error;
         const result = await optimisticRecord(data);
-        await addOfflineQueue('createDieselRecord', data);
+        await addOfflineQueue('createDieselRecord', { temporaryId: result.id, data });
         return result;
       }
     },
@@ -248,7 +256,11 @@ export function useOfflineUpdateDieselRecord() {
         return result;
       } catch (error) {
         if (!shouldQueue(error)) throw error;
-        if (id < 0) return optimisticRecordUpdate(id, data);
+        if (id < 0) {
+          const result = await optimisticRecordUpdate(id, data);
+          await updateQueuedCreate('createDieselRecord', id, data);
+          return result;
+        }
         const result = await optimisticRecordUpdate(id, data);
         await addOfflineQueue('updateDieselRecord', { id, data });
         return result;
@@ -265,7 +277,11 @@ export function useOfflineDeleteDieselRecord(date?: string) {
         await deleteDieselRecord(id);
       } catch (error) {
         if (!shouldQueue(error)) throw error;
-        if (id < 0) return optimisticRecordDelete(id, date);
+        if (id < 0) {
+          await optimisticRecordDelete(id, date);
+          await removeQueuedCreate('createDieselRecord', id);
+          return;
+        }
         await optimisticRecordDelete(id, date);
         await addOfflineQueue('deleteDieselRecord', { id });
       }
@@ -278,13 +294,13 @@ export async function syncOfflineQueue(): Promise<number> {
   let synced = 0;
   for (const item of queue) {
     try {
-      if (item.kind === 'createVehicle') await createVehicle(item.payload as VehicleInput);
+      if (item.kind === 'createVehicle') await createVehicle(((item.payload as { data?: VehicleInput }).data ?? item.payload) as VehicleInput);
       if (item.kind === 'updateVehicle') {
         const payload = item.payload as { id: number; data: VehicleUpdate };
         await updateVehicle(payload.id, payload.data);
       }
       if (item.kind === 'deleteVehicle') await deleteVehicle((item.payload as { id: number }).id);
-      if (item.kind === 'createDieselRecord') await createDieselRecord(item.payload as DieselRecordInput);
+      if (item.kind === 'createDieselRecord') await createDieselRecord(((item.payload as { data?: DieselRecordInput }).data ?? item.payload) as DieselRecordInput);
       if (item.kind === 'updateDieselRecord') {
         const payload = item.payload as { id: number; data: DieselRecordInput };
         await updateDieselRecord(payload.id, payload.data);

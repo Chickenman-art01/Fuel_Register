@@ -64,6 +64,52 @@ export async function removeOfflineQueueItem(id: number): Promise<void> {
   window.dispatchEvent(new Event('offline-queue-changed'));
 }
 
+export async function updateQueuedCreate(kind: string, temporaryId: number, payload: unknown): Promise<boolean> {
+  const database = await openDatabase();
+  return new Promise((resolve, reject) => {
+    const transaction = database.transaction('queue', 'readwrite');
+    const store = transaction.objectStore('queue');
+    const request = store.getAll();
+    let updated = false;
+    request.onsuccess = () => {
+      const item = (request.result as OfflineQueueItem[]).find((candidate) => {
+        if (candidate.kind !== kind || !candidate.id) return false;
+        const queuedPayload = candidate.payload as { temporaryId?: number };
+        return queuedPayload.temporaryId === temporaryId;
+      });
+      if (item?.id !== undefined) {
+        store.put({ ...item, payload: { temporaryId, data: payload } });
+        updated = true;
+      }
+    };
+    transaction.oncomplete = () => resolve(updated);
+    transaction.onerror = () => reject(transaction.error ?? new Error('Could not update offline queue.'));
+  });
+}
+
+export async function removeQueuedCreate(kind: string, temporaryId: number): Promise<boolean> {
+  const database = await openDatabase();
+  return new Promise((resolve, reject) => {
+    const transaction = database.transaction('queue', 'readwrite');
+    const store = transaction.objectStore('queue');
+    const request = store.getAll();
+    let removed = false;
+    request.onsuccess = () => {
+      const item = (request.result as OfflineQueueItem[]).find((candidate) => {
+        if (candidate.kind !== kind || !candidate.id) return false;
+        const queuedPayload = candidate.payload as { temporaryId?: number };
+        return queuedPayload.temporaryId === temporaryId;
+      });
+      if (item?.id !== undefined) {
+        store.delete(item.id);
+        removed = true;
+      }
+    };
+    transaction.oncomplete = () => resolve(removed);
+    transaction.onerror = () => reject(transaction.error ?? new Error('Could not remove offline queue item.'));
+  });
+}
+
 export async function getOfflineQueueCount(): Promise<number> {
   return runTransaction<number>('queue', 'readonly', (store) => store.count());
 }
