@@ -1,13 +1,50 @@
-import { LayoutDashboard, Truck, CircleHelp, Activity } from 'lucide-react';
+import { LayoutDashboard, Truck, CircleHelp, Activity, Cloud, CloudOff, RefreshCw } from 'lucide-react';
 import { Link, useLocation } from 'wouter';
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { syncOfflineQueue } from '@/lib/offline-api';
+import { getOfflineQueueCount } from '@/lib/offline-store';
 
 export function AppShell({ children }: { children: ReactNode }) {
   const [location] = useLocation();
+  const queryClient = useQueryClient();
+  const [online, setOnline] = useState(() => typeof navigator === 'undefined' || navigator.onLine);
+  const [pendingCount, setPendingCount] = useState(0);
+  const [syncing, setSyncing] = useState(false);
   const nav = [
     { href: '/', label: 'Control room', icon: LayoutDashboard, testId: 'link-dashboard' },
     { href: '/vehicles', label: 'Vehicles', icon: Truck, testId: 'link-vehicles' },
   ];
+
+  const refreshPendingCount = () => { getOfflineQueueCount().then(setPendingCount).catch(() => undefined); };
+  const syncNow = async () => {
+    if ((typeof navigator !== 'undefined' && !navigator.onLine) || syncing) return;
+    setSyncing(true);
+    try {
+      await syncOfflineQueue();
+      await queryClient.invalidateQueries();
+    } finally {
+      refreshPendingCount();
+      setSyncing(false);
+    }
+  };
+
+  useEffect(() => {
+    refreshPendingCount();
+    const handleOnline = () => { setOnline(true); void syncNow(); };
+    const handleOffline = () => setOnline(false);
+    const handleQueueChange = () => refreshPendingCount();
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    window.addEventListener('offline-queue-changed', handleQueueChange);
+    window.addEventListener('offline-sync-complete', handleQueueChange);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('offline-queue-changed', handleQueueChange);
+      window.removeEventListener('offline-sync-complete', handleQueueChange);
+    };
+  }, []);
 
   return (
     <div className="noise min-h-[100dvh] bg-background">
@@ -39,8 +76,11 @@ export function AppShell({ children }: { children: ReactNode }) {
             })}
           </nav>
           <div className="flex items-center gap-2 text-sidebar-foreground/60">
-            <Activity size={15} className="text-primary" />
-            <span className="hidden text-[11px] font-semibold uppercase tracking-[.14em] sm:inline">Site active</span>
+            {online ? <Cloud size={15} className="text-emerald-300" /> : <CloudOff size={15} className="text-primary" />}
+            <span className="hidden text-[11px] font-semibold uppercase tracking-[.14em] sm:inline">{online ? 'Online' : 'Offline'}</span>
+            {pendingCount > 0 && <span className="font-mono text-[10px] font-bold text-primary" data-testid="text-pending-sync">{pendingCount} pending</span>}
+            <button type="button" onClick={() => void syncNow()} disabled={!online || syncing} className="grid size-7 place-items-center rounded-md text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground disabled:opacity-40" title={online ? 'Sync pending records' : 'Waiting for connection'} aria-label="Sync pending records" data-testid="button-sync-now"><RefreshCw size={14} className={syncing ? 'animate-spin' : ''} /></button>
+            <Activity size={15} className="hidden text-primary sm:block" />
             <span className="size-2 rounded-full bg-emerald-400 shadow-[0_0_0_3px_rgba(52,211,153,.13)]" data-testid="status-site-active" />
           </div>
         </div>

@@ -5,21 +5,22 @@ import { useForm } from 'react-hook-form';
 import { useQueryClient } from '@tanstack/react-query';
 import { Archive, Check, Edit3, Gauge, Plus, RefreshCw, Search, Truck, TriangleAlert, X } from 'lucide-react';
 import {
-  getListVehiclesQueryKey, useCreateVehicle, useDeleteVehicle, useListVehicles, useUpdateVehicle,
+  getListVehiclesQueryKey,
 } from '@workspace/api-client-react';
 import type { Vehicle } from '@workspace/api-client-react';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { AppShell } from '@/components/app-shell';
+import { useOfflineCreateVehicle, useOfflineDeleteVehicle, useOfflineListVehicles, useOfflineUpdateVehicle } from '@/lib/offline-api';
 
 const vehicleSchema = z.object({ vehicleNo: z.string().trim().min(1, 'Vehicle number is required'), vehicleName: z.string().trim().min(1, 'Vehicle name is required') });
 type VehicleForm = z.infer<typeof vehicleSchema>;
 
 function VehicleFormPanel({ editing, onDone }: { editing: Vehicle | null; onDone: () => void }) {
   const queryClient = useQueryClient();
-  const create = useCreateVehicle();
-  const update = useUpdateVehicle();
+  const create = useOfflineCreateVehicle();
+  const update = useOfflineUpdateVehicle();
   const form = useForm<VehicleForm>({ resolver: zodResolver(vehicleSchema), defaultValues: { vehicleNo: editing?.vehicleNo ?? '', vehicleName: editing?.vehicleName ?? '' } });
   useEffect(() => {
     form.reset({ vehicleNo: editing?.vehicleNo ?? '', vehicleName: editing?.vehicleName ?? '' });
@@ -39,8 +40,8 @@ function VehicleFormPanel({ editing, onDone }: { editing: Vehicle | null; onDone
 
 export default function Vehicles() {
   const queryClient = useQueryClient();
-  const query = useListVehicles();
-  const archive = useDeleteVehicle();
+  const query = useOfflineListVehicles();
+  const archive = useOfflineDeleteVehicle();
   const [search, setSearch] = useState('');
   const [editing, setEditing] = useState<Vehicle | null>(null);
   const [selected, setSelected] = useState<Vehicle | null>(null);

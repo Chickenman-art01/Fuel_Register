@@ -9,14 +9,17 @@ import {
 } from 'lucide-react';
 import {
   getGetDieselSummaryQueryKey, getListDieselRecordsQueryKey, getListVehiclesQueryKey,
-  useCreateDieselRecord, useDeleteDieselRecord, useGetDieselSummary, useListDieselRecords,
-  useListVehicles, useUpdateDieselRecord,
+  useListVehicles,
 } from '@workspace/api-client-react';
 import type { DieselRecord, DieselRecordInput, DieselSummary, Vehicle } from '@workspace/api-client-react';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { AppShell } from '@/components/app-shell';
+import {
+  useOfflineCreateDieselRecord, useOfflineDeleteDieselRecord, useOfflineGetDieselSummary,
+  useOfflineListDieselRecords, useOfflineListVehicles, useOfflineUpdateDieselRecord,
+} from '@/lib/offline-api';
 
 const today = () => {
   const date = new Date();
@@ -73,8 +76,8 @@ function SummaryCards({ summary }: { summary: DieselSummary }) {
 
 function RecordFormPanel({ date, vehicles, editing, summary, onDone, onDateChange }: { date: string; vehicles: Vehicle[]; editing: DieselRecord | null; summary?: DieselSummary; onDone: () => void; onDateChange: (date: string) => void }) {
   const queryClient = useQueryClient();
-  const create = useCreateDieselRecord();
-  const update = useUpdateDieselRecord();
+  const create = useOfflineCreateDieselRecord();
+  const update = useOfflineUpdateDieselRecord();
   const [entryMode, setEntryMode] = useState<EntryMode>((editing?.dieselPurchased ?? 0) > 0 && (editing?.dieselIssued ?? 0) === 0 ? 'purchase' : 'issue');
   const form = useForm<RecordForm>({
     resolver: zodResolver(recordSchema),
@@ -205,10 +208,10 @@ export default function Dashboard() {
   const [date, setDate] = useState(today);
   const [editing, setEditing] = useState<DieselRecord | null>(null);
   const queryClient = useQueryClient();
-  const summaryQuery = useGetDieselSummary({ date });
-  const recordsQuery = useListDieselRecords({ date });
-  const vehiclesQuery = useListVehicles();
-  const deleteRecord = useDeleteDieselRecord();
+  const summaryQuery = useOfflineGetDieselSummary({ date });
+  const recordsQuery = useOfflineListDieselRecords({ date });
+  const vehiclesQuery = useOfflineListVehicles();
+  const deleteRecord = useOfflineDeleteDieselRecord(date);
   const vehiclesResponseInvalid = vehiclesQuery.data != null && !Array.isArray(vehiclesQuery.data);
   const vehicles = useMemo(() => (Array.isArray(vehiclesQuery.data) ? vehiclesQuery.data as Vehicle[] : []).filter((v) => v.active), [vehiclesQuery.data]);
   const summary = summaryQuery.data;
