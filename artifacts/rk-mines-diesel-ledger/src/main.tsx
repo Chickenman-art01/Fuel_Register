@@ -16,6 +16,14 @@ setAuthTokenGetter(getSupabaseAccessToken);
 
 supabase.auth.onAuthStateChange(() => undefined);
 
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch((error) => {
+      console.error('Service worker registration failed', error);
+    });
+  });
+}
+
 createRoot(document.getElementById('root')!, {
   // Keeps caught errors off reportError(), which would raise the dev overlay.
   onCaughtError: (error, errorInfo) => {
