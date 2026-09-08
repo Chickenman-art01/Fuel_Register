@@ -89,13 +89,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
-      const storedPasskey = localStorage.getItem(passkeyStorageKey);
-      if (data.session && storedPasskey) {
-        setPasskeyLocked(true);
-        setSignedIn(false);
-      } else {
-        setSignedIn(Boolean(data.session));
-      }
+      setSignedIn(Boolean(data.session));
       setRole(getUserRole(data.session?.user ?? null));
       setReady(true);
     });
