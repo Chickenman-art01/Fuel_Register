@@ -83,7 +83,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
   const [setupDismissed, setSetupDismissed] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [mode, setMode] = useState<'sign-in' | 'sign-up'>('sign-in');
+  const [mode, setMode] = useState<'sign-in' | 'reset-request' | 'update-password'>('sign-in');
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -101,6 +101,10 @@ export function AuthGate({ children }: { children: ReactNode }) {
     });
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_OUT') setSignedIn(false);
+      if (event === 'PASSWORD_RECOVERY') {
+        setMode('update-password');
+        setSignedIn(false);
+      }
       if (event === 'SIGNED_IN') {
         setRole(getUserRole(session?.user ?? null));
         if (!localStorage.getItem(passkeyStorageKey)) setSignedIn(true);
@@ -116,13 +120,23 @@ export function AuthGate({ children }: { children: ReactNode }) {
     setMessage('');
     const result = mode === 'sign-in'
       ? await supabase.auth.signInWithPassword({ email, password })
-      : await supabase.auth.signUp({ email, password });
+      : mode === 'reset-request'
+        ? await supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin })
+        : await supabase.auth.updateUser({ password });
     setBusy(false);
     if (result.error) setMessage(result.error.message);
     else {
-      setSignedIn(true);
-      setPasskeyLocked(false);
-      if (mode === 'sign-up') setMessage('Account created. Check your email if confirmation is enabled.');
+      if (mode === 'sign-in') {
+        setSignedIn(true);
+        setPasskeyLocked(false);
+      } else if (mode === 'reset-request') {
+        setMessage('Password reset email sent. Check your inbox.');
+      } else {
+        await supabase.auth.signOut();
+        setMode('sign-in');
+        setPassword('');
+        setMessage('Password updated. Sign in with your new password.');
+      }
     }
   };
 
@@ -185,11 +199,11 @@ export function AuthGate({ children }: { children: ReactNode }) {
         )}
         <form onSubmit={submit} className="space-y-4">
           <label className="block text-xs font-bold uppercase tracking-[.1em] text-muted-foreground">Email<input required type="email" value={email} onChange={(event) => setEmail(event.target.value)} className="mt-2 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm font-normal normal-case tracking-normal outline-none focus:border-primary" /></label>
-          <label className="block text-xs font-bold uppercase tracking-[.1em] text-muted-foreground">Password<input required minLength={6} type="password" value={password} onChange={(event) => setPassword(event.target.value)} className="mt-2 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm font-normal normal-case tracking-normal outline-none focus:border-primary" /></label>
+          {mode !== 'reset-request' && <label className="block text-xs font-bold uppercase tracking-[.1em] text-muted-foreground">{mode === 'update-password' ? 'New password' : 'Password'}<input required minLength={6} type="password" value={password} onChange={(event) => setPassword(event.target.value)} className="mt-2 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm font-normal normal-case tracking-normal outline-none focus:border-primary" /></label>}
           {message && <p className="text-xs text-destructive">{message}</p>}
-          <button type="submit" disabled={busy} className="flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-primary font-bold text-primary-foreground disabled:opacity-60"><LogIn size={15} />{busy ? 'Working...' : mode === 'sign-in' ? 'Sign in' : 'Create account'}</button>
+          <button type="submit" disabled={busy} className="flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-primary font-bold text-primary-foreground disabled:opacity-60"><LogIn size={15} />{busy ? 'Working...' : mode === 'sign-in' ? 'Sign in' : mode === 'reset-request' ? 'Send reset email' : 'Update password'}</button>
         </form>
-        <button type="button" onClick={() => { setMode(mode === 'sign-in' ? 'sign-up' : 'sign-in'); setMessage(''); }} className="mt-4 flex w-full items-center justify-center gap-2 text-xs font-bold text-muted-foreground hover:text-foreground"><Mail size={13} />{mode === 'sign-in' ? 'Create a new account' : 'Already have an account? Sign in'}</button>
+        {mode === 'sign-in' ? <button type="button" onClick={() => { setMode('reset-request'); setMessage(''); }} className="mt-4 flex w-full items-center justify-center gap-2 text-xs font-bold text-muted-foreground hover:text-foreground"><Mail size={13} />Forgot password?</button> : <button type="button" onClick={() => { setMode('sign-in'); setMessage(''); }} className="mt-4 flex w-full items-center justify-center gap-2 text-xs font-bold text-muted-foreground hover:text-foreground"><Mail size={13} />Back to sign in</button>}
       </section>
     </main>
   );
