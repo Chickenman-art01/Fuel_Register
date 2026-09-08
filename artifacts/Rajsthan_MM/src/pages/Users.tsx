@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { RefreshCw, ShieldCheck, Trash2 } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
-import { UserEntryForm } from "@/Farm";
+import { UserEntryForm } from "@/farms";
 import {
   deleteManagedUser,
   listManagedUsers,

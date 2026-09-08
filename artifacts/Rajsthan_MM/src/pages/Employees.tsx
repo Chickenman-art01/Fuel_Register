@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, RefreshCw, Trash2, UserCheck, Users, XCircle } from "lucide-react";
 import { getListPeopleQueryKey } from "@workspace/api-client-react";
 import { AppShell } from "@/components/app-shell";
-import { EmployeeEntryForm } from "@/Farm";
+import { EmployeeEntryForm } from "@/farms";
 import { supabase } from "@/lib/supabase";
 
 export interface StaffMember {

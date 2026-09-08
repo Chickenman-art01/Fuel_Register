@@ -21,7 +21,7 @@ import {
   type Vehicle,
 } from "@workspace/api-client-react";
 import { AppShell } from "@/components/app-shell";
-import { FuelEntryForm, litres } from "@/Farm";
+import { FuelEntryForm, litres } from "@/farms";
 import {
   useOfflineDeleteDieselRecord,
   useOfflineGetDieselSummary,

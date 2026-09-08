@@ -13,11 +13,16 @@ import {
   ShieldCheck,
   Cpu,
   MapPin,
-  Calendar,
+  Plus,
+  Activity,
+  Wrench,
+  Camera,
+  AlertTriangle,
+  ChevronDown,
 } from "lucide-react";
 import { getListVehiclesQueryKey, type Vehicle } from "@workspace/api-client-react";
 import { AppShell } from "@/components/app-shell";
-import { VehicleEntryForm } from "@/Farm";
+import { VehicleAdditionForm, VehicleEditForm } from "@/farms";
 import { useOfflineDeleteVehicle, useOfflineListVehicles } from "@/lib/offline-api";
 
 export default function Vehicles() {
@@ -28,8 +33,15 @@ export default function Vehicles() {
   const [typeFilter, setTypeFilter] = useState("all");
   const [maintenanceFilter, setMaintenanceFilter] = useState("all");
   const [viewMode, setViewMode] = useState<"table" | "cards">("table");
+  
+  // Modals / Panels
+  const [isAdding, setIsAdding] = useState(false);
   const [editing, setEditing] = useState<Vehicle | null>(null);
   const [selected, setSelected] = useState<Vehicle | null>(null);
+
+  // Edit Vehicles Dropdown State
+  const [editDropdownOpen, setEditDropdownOpen] = useState(false);
+  const [dropdownSearch, setDropdownSearch] = useState("");
 
   const vehiclesResponseInvalid = query.data != null && !Array.isArray(query.data);
 
@@ -37,6 +49,40 @@ export default function Vehicles() {
     () => (Array.isArray(query.data) ? (query.data as Vehicle[]) : []),
     [query.data]
   );
+
+  // Stats Dashboard calculations
+  const stats = useMemo(() => {
+    const activeFleet = rawVehicles.filter((v) => v.active);
+    const total = activeFleet.length;
+    const running = activeFleet.filter((v) => {
+      const s = (v.maintenanceStatus ?? "").toLowerCase();
+      return s.includes("active") || s.includes("running");
+    }).length;
+    const maintenance = activeFleet.filter((v) => {
+      const s = (v.maintenanceStatus ?? "").toLowerCase();
+      return s.includes("maintenance") || s.includes("breakdown");
+    }).length;
+    const gpsWorking = activeFleet.filter((v) => {
+      const s = (v.gpsStatus ?? "").toLowerCase();
+      return s.includes("working") || s.includes("installed");
+    }).length;
+    const cameraWorking = activeFleet.filter((v) => {
+      const s = (v.cameraStatus ?? "").toLowerCase();
+      return s.includes("working") || s.includes("installed");
+    }).length;
+
+    const now = new Date();
+    const alertCount = activeFleet.filter((v) => {
+      const dates = [v.insuranceTill, v.fitnessTill, v.puccTill, v.registrationTill].filter(Boolean);
+      return dates.some((d) => {
+        const exp = new Date(d!);
+        const diffDays = (exp.getTime() - now.getTime()) / (1000 * 3600 * 24);
+        return diffDays <= 30;
+      });
+    }).length;
+
+    return { total, running, maintenance, gpsWorking, cameraWorking, alertCount };
+  }, [rawVehicles]);
 
   const uniqueTypes = useMemo(() => {
     const set = new Set<string>();
@@ -82,6 +128,26 @@ export default function Vehicles() {
     });
   }, [rawVehicles, search, typeFilter, maintenanceFilter]);
 
+  // Vehicles for Edit Dropdown
+  const editDropdownVehicles = useMemo(() => {
+    const activeUnits = rawVehicles.filter((v) => v.active);
+    if (!dropdownSearch.trim()) return activeUnits;
+    const term = dropdownSearch.toLowerCase();
+    return activeUnits.filter((v) => {
+      const searchable = [
+        v.vehicleCode,
+        v.registrationNo,
+        v.ownerName,
+        v.vehicleType,
+        v.vehicleNo,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return searchable.includes(term);
+    });
+  }, [rawVehicles, dropdownSearch]);
+
   const handleArchive = (vehicle: Vehicle) => {
     const label = vehicle.registrationNo || vehicle.vehicleCode || vehicle.vehicleNo;
     if (!window.confirm(`Archive ${label} from the active fleet?`)) return;
@@ -91,6 +157,7 @@ export default function Vehicles() {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getListVehiclesQueryKey() });
           if (selected?.id === vehicle.id) setSelected(null);
+          if (editing?.id === vehicle.id) setEditing(null);
         },
       }
     );
@@ -133,15 +200,169 @@ export default function Vehicles() {
   return (
     <AppShell>
       <div className="animate-rise">
-        <div className="mb-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+        {/* Page Top Bar */}
+        <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div>
             <h1 className="text-3xl font-extrabold tracking-[-.04em] sm:text-4xl">Vehicles</h1>
           </div>
-          <div
-            className="rounded-xl border border-card-border bg-card px-3 py-2 font-mono text-xs text-muted-foreground"
-            data-testid="text-active-vehicle-count"
-          >
-            <span className="font-bold text-foreground">{vehicles.length.toString().padStart(2, "0")}</span> active units
+
+          {/* Two Buttons: Add Vehicles & Edit Vehicles */}
+          <div className="flex items-center gap-2.5">
+            {/* Add Vehicles Button */}
+            <button
+              type="button"
+              onClick={() => {
+                setIsAdding(true);
+                setEditing(null);
+                setEditDropdownOpen(false);
+              }}
+              className="flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2.5 text-xs font-extrabold text-primary-foreground shadow-[0_3px_0_hsl(34_84%_32%)] transition hover:brightness-105 active:translate-y-0.5"
+              data-testid="button-add-vehicle-top"
+            >
+              <Plus size={15} strokeWidth={2.5} />
+              <span>Add Vehicles</span>
+            </button>
+
+            {/* Edit Vehicles Button with Search Dropdown */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => {
+                  setEditDropdownOpen(!editDropdownOpen);
+                  setDropdownSearch("");
+                }}
+                className="flex items-center gap-1.5 rounded-xl border border-input bg-card px-4 py-2.5 text-xs font-extrabold text-foreground shadow-sm transition hover:bg-muted active:translate-y-0.5"
+                data-testid="button-edit-vehicles-top"
+              >
+                <Edit3 size={15} />
+                <span>Edit Vehicles</span>
+                <ChevronDown size={14} className={`transition-transform ${editDropdownOpen ? "rotate-180" : ""}`} />
+              </button>
+
+              {/* Dropdown with live search inside */}
+              {editDropdownOpen && (
+                <div className="absolute right-0 top-full z-40 mt-1.5 w-72 sm:w-80 rounded-2xl border border-border bg-popover p-2.5 shadow-2xl animate-rise">
+                  <div className="relative mb-2">
+                    <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <input
+                      type="search"
+                      autoFocus
+                      value={dropdownSearch}
+                      onChange={(e) => setDropdownSearch(e.target.value)}
+                      placeholder="Search vehicle code or reg no..."
+                      className="h-8 w-full rounded-lg border border-input bg-background pl-8 pr-2.5 text-xs outline-none focus:border-primary"
+                      data-testid="input-search-edit-vehicles-dropdown"
+                    />
+                  </div>
+
+                  <div className="max-h-60 overflow-y-auto divide-y divide-border/40 text-xs">
+                    {editDropdownVehicles.length === 0 ? (
+                      <div className="p-3 text-center text-muted-foreground">No vehicles found</div>
+                    ) : (
+                      editDropdownVehicles.map((v) => (
+                        <button
+                          key={v.id}
+                          type="button"
+                          onClick={() => {
+                            setEditing(v);
+                            setIsAdding(false);
+                            setEditDropdownOpen(false);
+                          }}
+                          className="flex w-full items-center justify-between p-2.5 text-left rounded-xl transition hover:bg-muted/70"
+                          data-testid={`option-edit-vehicle-${v.id}`}
+                        >
+                          <div>
+                            <div className="flex items-center gap-2 font-mono font-bold">
+                              <span className="text-foreground">{v.vehicleCode || v.vehicleNo}</span>
+                              {v.registrationNo && (
+                                <span className="rounded bg-muted px-1 py-0.5 text-[10px] text-muted-foreground font-normal">
+                                  {v.registrationNo}
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-[11px] text-muted-foreground">
+                              {v.vehicleType || "General"} · {v.ownerName || "No owner"}
+                            </div>
+                          </div>
+                          <span className="rounded-md bg-primary/10 p-1 text-primary">
+                            <Edit3 size={13} />
+                          </span>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Vehicle Stats Dashboard */}
+        <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6" data-testid="dashboard-vehicle-stats">
+          <div className="rounded-2xl border border-card-border bg-card p-3.5 shadow-sm">
+            <div className="flex items-center justify-between text-muted-foreground">
+              <span className="text-[10px] font-bold uppercase tracking-[.08em]">Total Fleet</span>
+              <Truck size={15} className="text-primary" />
+            </div>
+            <div className="mt-2 text-2xl font-extrabold text-foreground" data-testid="text-active-vehicle-count">
+              {stats.total.toString().padStart(2, "0")}
+            </div>
+            <div className="mt-0.5 text-[10px] text-muted-foreground">Registered units</div>
+          </div>
+
+          <div className="rounded-2xl border border-card-border bg-card p-3.5 shadow-sm">
+            <div className="flex items-center justify-between text-muted-foreground">
+              <span className="text-[10px] font-bold uppercase tracking-[.08em]">Running</span>
+              <Activity size={15} className="text-emerald-600" />
+            </div>
+            <div className="mt-2 text-2xl font-extrabold text-emerald-600">
+              {stats.running.toString().padStart(2, "0")}
+            </div>
+            <div className="mt-0.5 text-[10px] text-muted-foreground">Active in operations</div>
+          </div>
+
+          <div className="rounded-2xl border border-card-border bg-card p-3.5 shadow-sm">
+            <div className="flex items-center justify-between text-muted-foreground">
+              <span className="text-[10px] font-bold uppercase tracking-[.08em]">Under Maint.</span>
+              <Wrench size={15} className="text-amber-600" />
+            </div>
+            <div className="mt-2 text-2xl font-extrabold text-amber-600">
+              {stats.maintenance.toString().padStart(2, "0")}
+            </div>
+            <div className="mt-0.5 text-[10px] text-muted-foreground">Workshop / breakdown</div>
+          </div>
+
+          <div className="rounded-2xl border border-card-border bg-card p-3.5 shadow-sm">
+            <div className="flex items-center justify-between text-muted-foreground">
+              <span className="text-[10px] font-bold uppercase tracking-[.08em]">GPS Active</span>
+              <Cpu size={15} className="text-sky-600" />
+            </div>
+            <div className="mt-2 text-2xl font-extrabold text-sky-600">
+              {stats.gpsWorking.toString().padStart(2, "0")}
+            </div>
+            <div className="mt-0.5 text-[10px] text-muted-foreground">Tracking live</div>
+          </div>
+
+          <div className="rounded-2xl border border-card-border bg-card p-3.5 shadow-sm">
+            <div className="flex items-center justify-between text-muted-foreground">
+              <span className="text-[10px] font-bold uppercase tracking-[.08em]">Camera Active</span>
+              <Camera size={15} className="text-indigo-600" />
+            </div>
+            <div className="mt-2 text-2xl font-extrabold text-indigo-600">
+              {stats.cameraWorking.toString().padStart(2, "0")}
+            </div>
+            <div className="mt-0.5 text-[10px] text-muted-foreground">Recording active</div>
+          </div>
+
+          <div className="rounded-2xl border border-card-border bg-card p-3.5 shadow-sm">
+            <div className="flex items-center justify-between text-muted-foreground">
+              <span className="text-[10px] font-bold uppercase tracking-[.08em]">Expiry Alerts</span>
+              <AlertTriangle size={15} className={stats.alertCount > 0 ? "text-rose-600" : "text-emerald-600"} />
+            </div>
+            <div className={`mt-2 text-2xl font-extrabold ${stats.alertCount > 0 ? "text-rose-600" : "text-foreground"}`}>
+              {stats.alertCount.toString().padStart(2, "0")}
+            </div>
+            <div className="mt-0.5 text-[10px] text-muted-foreground">Due within 30 days</div>
           </div>
         </div>
 
@@ -164,8 +385,29 @@ export default function Vehicles() {
           </div>
         )}
 
-        <div className="grid gap-5 xl:grid-cols-[minmax(330px,400px)_1fr]">
-          <VehicleEntryForm editing={editing} onDone={() => setEditing(null)} />
+        {/* Main Content Area */}
+        <div className="grid gap-5 xl:grid-cols-1">
+          {/* Modal / Slide-over Drawer for Add Vehicle */}
+          {isAdding && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-rise">
+              <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-card shadow-2xl border border-border">
+                <VehicleAdditionForm onDone={() => setIsAdding(false)} />
+              </div>
+            </div>
+          )}
+
+          {/* Modal / Slide-over Drawer for Edit Vehicle */}
+          {editing && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-rise">
+              <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-card shadow-2xl border border-border">
+                <VehicleEditForm
+                  vehicle={editing}
+                  onDone={() => setEditing(null)}
+                  onSelectVehicle={(v) => setEditing(v)}
+                />
+              </div>
+            </div>
+          )}
 
           <section
             className="min-w-0 rounded-2xl border border-card-border bg-card shadow-[0_7px_22px_rgba(40,53,58,.045)]"
@@ -174,7 +416,7 @@ export default function Vehicles() {
             {/* Table Controls */}
             <div className="flex flex-col gap-3 border-b border-border/70 p-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex flex-wrap items-center gap-2">
-                <h2 className="font-extrabold">Fleet register</h2>
+                <h2 className="font-extrabold text-base">Fleet Register</h2>
                 <div className="flex rounded-lg border border-border bg-background p-0.5 text-xs">
                   <button
                     type="button"
@@ -224,7 +466,7 @@ export default function Vehicles() {
                   ))}
                 </select>
 
-                <label className="relative block w-full sm:w-52">
+                <label className="relative block w-full sm:w-56">
                   <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                   <input
                     type="search"
@@ -251,7 +493,7 @@ export default function Vehicles() {
                 </span>
                 <p className="text-sm font-bold">{search ? "No matching vehicles" : "No active vehicles yet"}</p>
                 <p className="mt-1 max-w-xs text-xs text-muted-foreground">
-                  {search ? "Try another search term or filter." : "Use the form to add units to the fleet."}
+                  {search ? "Try another search term or filter." : "Click Add Vehicles above to register the first unit."}
                 </p>
               </div>
             ) : viewMode === "table" ? (
@@ -277,7 +519,7 @@ export default function Vehicles() {
                       <th className="px-3 py-2.5">Ins. Till</th>
                       <th className="px-3 py-2.5">Fitness Till</th>
                       <th className="px-3 py-2.5">PUCC Till</th>
-                      <th className="sticky right-0 bg-muted/80 px-3 py-2.5 text-right">Actions</th>
+                      <th className="sticky right-0 bg-muted/90 px-3 py-2.5 text-right backdrop-blur-sm">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/60">
@@ -343,13 +585,14 @@ export default function Vehicles() {
                         <td className="px-3 py-2.5 font-mono">
                           {vehicle.puccTill || "-"}
                         </td>
-                        <td className="sticky right-0 bg-card/95 px-3 py-2.5 text-right">
+                        <td className="sticky right-0 bg-card/95 px-3 py-2.5 text-right backdrop-blur-sm">
                           <div className="flex items-center justify-end gap-1">
                             <button
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setEditing(vehicle);
+                                setIsAdding(false);
                               }}
                               className="rounded-md p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground"
                               title="Edit vehicle"
@@ -425,44 +668,31 @@ export default function Vehicles() {
                       </div>
 
                       <div className="flex shrink-0 gap-1">
-                        <span
-                          role="button"
-                          tabIndex={0}
+                        <button
+                          type="button"
                           onClick={(event) => {
                             event.stopPropagation();
                             setEditing(vehicle);
-                          }}
-                          onKeyDown={(event) => {
-                            if (event.key === "Enter") {
-                              event.stopPropagation();
-                              setEditing(vehicle);
-                            }
+                            setIsAdding(false);
                           }}
                           className="rounded-md p-2 text-muted-foreground hover:bg-secondary hover:text-foreground"
                           title="Edit vehicle"
                           data-testid={`button-edit-vehicle-${vehicle.id}`}
                         >
                           <Edit3 size={14} />
-                        </span>
-                        <span
-                          role="button"
-                          tabIndex={0}
+                        </button>
+                        <button
+                          type="button"
                           onClick={(event) => {
                             event.stopPropagation();
                             handleArchive(vehicle);
-                          }}
-                          onKeyDown={(event) => {
-                            if (event.key === "Enter") {
-                              event.stopPropagation();
-                              handleArchive(vehicle);
-                            }
                           }}
                           className="rounded-md p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                           title="Archive vehicle"
                           data-testid={`button-archive-vehicle-${vehicle.id}`}
                         >
                           <Archive size={14} />
-                        </span>
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -504,14 +734,27 @@ export default function Vehicles() {
                   </p>
                 )}
               </div>
-              <button
-                type="button"
-                onClick={() => setSelected(null)}
-                className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent/10"
-                data-testid="button-close-vehicle-details"
-              >
-                <X size={16} />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditing(selected);
+                    setIsAdding(false);
+                  }}
+                  className="flex items-center gap-1.5 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-bold text-primary hover:bg-primary/20"
+                >
+                  <Edit3 size={13} />
+                  <span>Edit Unit</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelected(null)}
+                  className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent/10"
+                  data-testid="button-close-vehicle-details"
+                >
+                  <X size={16} />
+                </button>
+              </div>
             </div>
 
             <div className="mt-5 grid grid-cols-1 gap-6 border-t border-accent/15 pt-5 md:grid-cols-3">
