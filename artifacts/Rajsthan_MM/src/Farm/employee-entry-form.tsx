@@ -28,10 +28,19 @@ export function EmployeeEntryForm({ onSuccess }: EmployeeEntryFormProps) {
 
     try {
       const { error: insertError } = await supabase
-        .from("staff_members")
+        .from("employees")
         .insert({ name: trimmedName, role, active: true });
 
       if (insertError) throw insertError;
+
+      // also keep staff_members table in sync
+      try {
+        await supabase
+          .from("staff_members")
+          .insert({ name: trimmedName, role, active: true });
+      } catch {
+        // ignore sync error
+      }
 
       setName("");
       queryClient.invalidateQueries({ queryKey: getListPeopleQueryKey({ role: "operator" }) });

@@ -1,20 +1,21 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
+  Check,
   Edit3,
   ListPlus,
   Plus,
-  RotateCcw,
+  RefreshCw,
   Search,
-  Sliders,
   Trash2,
   X,
-  Check,
 } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import {
-  defaultDropdownCategories,
-  loadDropdownCategories,
-  saveDropdownCategories,
+  addDropdownCategory,
+  deleteDropdownCategory,
+  fetchDropdownCategories,
+  getCachedDropdownCategories,
+  updateDropdownCategory,
   type DropdownCategory,
 } from "@/lib/dropdown-store";
 
@@ -26,7 +27,9 @@ function getColumnHeader(index: number): string {
 }
 
 export default function Dropdowns() {
-  const [categories, setCategories] = useState<DropdownCategory[]>(() => loadDropdownCategories());
+  const [categories, setCategories] = useState<DropdownCategory[]>(() => getCachedDropdownCategories());
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
   const [search, setSearch] = useState("");
   const [customColumnCount, setCustomColumnCount] = useState<number>(13);
   const [newDescModal, setNewDescModal] = useState(false);
@@ -35,10 +38,25 @@ export default function Dropdowns() {
   const [editingDescText, setEditingDescText] = useState("");
   const [editingCell, setEditingCell] = useState<{ catId: string; colIdx: number; value: string } | null>(null);
 
-  const updateAndSave = (next: DropdownCategory[]) => {
-    setCategories(next);
-    saveDropdownCategories(next);
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const data = await fetchDropdownCategories();
+      setCategories(data);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  useEffect(() => {
+    void loadData();
+    const handleSync = (e: Event) => {
+      const customEvent = e as CustomEvent<DropdownCategory[]>;
+      if (customEvent.detail) setCategories(customEvent.detail);
+    };
+    window.addEventListener("rajsthan_dropdowns_changed", handleSync);
+    return () => window.removeEventListener("rajsthan_dropdowns_changed", handleSync);
+  }, []);
 
   const maxOptionsInRows = useMemo(() => {
     return categories.reduce((max, cat) => Math.max(max, cat.options.length), 0);
@@ -60,78 +78,108 @@ export default function Dropdowns() {
     return categories.reduce((sum, c) => sum + c.options.length, 0);
   }, [categories]);
 
-  const handleAddDescription = (e: React.FormEvent) => {
+  const handleAddDescription = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = newDescName.trim();
     if (!trimmed) return;
-    const newCat: DropdownCategory = {
-      id: `desc-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-      description: trimmed,
-      options: [],
-    };
-    updateAndSave([...categories, newCat]);
-    setNewDescName("");
-    setNewDescModal(false);
+    setBusy(true);
+    try {
+      await addDropdownCategory(trimmed);
+      setNewDescName("");
+      setNewDescModal(false);
+      await loadData();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Could not add category to database.");
+    } finally {
+      setBusy(false);
+    }
   };
 
-  const handleDeleteDescription = (id: string, name: string) => {
-    if (!window.confirm(`Delete description "${name}" and all its dropdown values?`)) return;
-    updateAndSave(categories.filter((c) => c.id !== id));
+  const handleDeleteDescription = async (id: string, name: string) => {
+    if (!window.confirm(`Delete description "${name}" from database and all its dropdown options?`)) return;
+    setBusy(true);
+    try {
+      await deleteDropdownCategory(id);
+      await loadData();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Could not delete category.");
+    } finally {
+      setBusy(false);
+    }
   };
 
-  const handleSaveDescriptionName = (id: string) => {
+  const handleSaveDescriptionName = async (id: string) => {
     const trimmed = editingDescText.trim();
     if (!trimmed) return;
-    updateAndSave(
-      categories.map((c) => (c.id === id ? { ...c, description: trimmed } : c))
-    );
-    setEditingDescId(null);
+    setBusy(true);
+    try {
+      await updateDropdownCategory(id, { description: trimmed });
+      setEditingDescId(null);
+      await loadData();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Could not rename category.");
+    } finally {
+      setBusy(false);
+    }
   };
 
-  const handleAddOption = (catId: string, value: string) => {
+  const handleAddOption = async (catId: string, value: string) => {
     const trimmed = value.trim();
     if (!trimmed) return;
-    updateAndSave(
-      categories.map((c) => {
-        if (c.id !== catId) return c;
-        if (c.options.includes(trimmed)) return c;
-        return { ...c, options: [...c.options, trimmed] };
-      })
-    );
+    const cat = categories.find((c) => c.id === catId);
+    if (!cat) return;
+    if (cat.options.includes(trimmed)) return;
+    const nextOptions = [...cat.options, trimmed];
+
+    setBusy(true);
+    try {
+      await updateDropdownCategory(catId, { options: nextOptions });
+      await loadData();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Could not save option to database.");
+    } finally {
+      setBusy(false);
+    }
   };
 
-  const handleUpdateOption = (catId: string, index: number, value: string) => {
+  const handleUpdateOption = async (catId: string, index: number, value: string) => {
     const trimmed = value.trim();
-    updateAndSave(
-      categories.map((c) => {
-        if (c.id !== catId) return c;
-        const nextOpts = [...c.options];
-        if (!trimmed) {
-          nextOpts.splice(index, 1);
-        } else {
-          nextOpts[index] = trimmed;
-        }
-        return { ...c, options: nextOpts };
-      })
-    );
-    setEditingCell(null);
+    const cat = categories.find((c) => c.id === catId);
+    if (!cat) return;
+    const nextOptions = [...cat.options];
+    if (!trimmed) {
+      nextOptions.splice(index, 1);
+    } else {
+      nextOptions[index] = trimmed;
+    }
+
+    setBusy(true);
+    try {
+      await updateDropdownCategory(catId, { options: nextOptions });
+      setEditingCell(null);
+      await loadData();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Could not update option in database.");
+    } finally {
+      setBusy(false);
+    }
   };
 
-  const handleDeleteOption = (catId: string, index: number) => {
-    updateAndSave(
-      categories.map((c) => {
-        if (c.id !== catId) return c;
-        const nextOpts = [...c.options];
-        nextOpts.splice(index, 1);
-        return { ...c, options: nextOpts };
-      })
-    );
-  };
+  const handleDeleteOption = async (catId: string, index: number) => {
+    const cat = categories.find((c) => c.id === catId);
+    if (!cat) return;
+    const nextOptions = [...cat.options];
+    nextOptions.splice(index, 1);
 
-  const handleResetDefaults = () => {
-    if (!window.confirm("Reset all dropdown descriptions and options to system defaults?")) return;
-    updateAndSave(defaultDropdownCategories);
-    setCustomColumnCount(13);
+    setBusy(true);
+    try {
+      await updateDropdownCategory(catId, { options: nextOptions });
+      await loadData();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Could not remove option.");
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -147,16 +195,17 @@ export default function Dropdowns() {
               data-testid="text-dropdown-metrics"
             >
               <span className="font-bold text-foreground">{categories.length}</span> descriptions ·{" "}
-              <span className="font-bold text-foreground">{totalValues}</span> values
+              <span className="font-bold text-foreground">{totalValues}</span> values (Database)
             </div>
             <button
               type="button"
-              onClick={handleResetDefaults}
-              className="flex h-9 items-center gap-1.5 rounded-lg border border-border bg-card px-3 text-xs font-semibold text-muted-foreground hover:bg-muted hover:text-foreground"
-              title="Reset to default options"
-              data-testid="button-reset-defaults"
+              onClick={() => void loadData()}
+              disabled={loading || busy}
+              className="grid size-9 place-items-center rounded-lg border border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
+              title="Refresh from database"
+              data-testid="button-refresh-dropdowns"
             >
-              <RotateCcw size={14} /> Reset defaults
+              <RefreshCw size={15} className={loading || busy ? "animate-spin" : ""} />
             </button>
           </div>
         </div>
@@ -166,8 +215,9 @@ export default function Dropdowns() {
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
+              disabled={busy}
               onClick={() => setNewDescModal(true)}
-              className="flex h-9 items-center gap-1.5 rounded-lg bg-primary px-3.5 text-xs font-bold text-primary-foreground shadow-[0_3px_0_hsl(34_84%_32%)] hover:bg-primary/90"
+              className="flex h-9 items-center gap-1.5 rounded-lg bg-primary px-3.5 text-xs font-bold text-primary-foreground shadow-[0_3px_0_hsl(34_84%_32%)] hover:bg-primary/90 disabled:opacity-50"
               data-testid="button-add-description"
             >
               <Plus size={15} /> Add description
@@ -222,10 +272,11 @@ export default function Dropdowns() {
               />
               <button
                 type="submit"
-                className="flex h-9 items-center justify-center gap-1.5 rounded-lg bg-primary px-4 text-xs font-bold text-primary-foreground"
+                disabled={busy}
+                className="flex h-9 items-center justify-center gap-1.5 rounded-lg bg-primary px-4 text-xs font-bold text-primary-foreground disabled:opacity-50"
                 data-testid="button-submit-new-desc"
               >
-                <Plus size={14} /> Save description
+                <Plus size={14} /> Save to database
               </button>
             </form>
           </div>
@@ -283,8 +334,9 @@ export default function Dropdowns() {
                           />
                           <button
                             type="button"
+                            disabled={busy}
                             onClick={() => handleSaveDescriptionName(cat.id)}
-                            className="grid size-7 shrink-0 place-items-center rounded bg-primary text-primary-foreground"
+                            className="grid size-7 shrink-0 place-items-center rounded bg-primary text-primary-foreground disabled:opacity-50"
                             title="Save"
                           >
                             <Check size={13} />
@@ -316,8 +368,9 @@ export default function Dropdowns() {
                             </button>
                             <button
                               type="button"
+                              disabled={busy}
                               onClick={() => handleDeleteDescription(cat.id, cat.description)}
-                              className="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                              className="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive disabled:opacity-50"
                               title="Delete description"
                               data-testid={`button-delete-desc-${cat.id}`}
                             >
@@ -373,8 +426,9 @@ export default function Dropdowns() {
                                 </button>
                                 <button
                                   type="button"
+                                  disabled={busy}
                                   onClick={() => handleDeleteOption(cat.id, colIdx)}
-                                  className="rounded p-0.5 text-muted-foreground hover:text-destructive"
+                                  className="rounded p-0.5 text-muted-foreground hover:text-destructive disabled:opacity-50"
                                   title="Remove option"
                                 >
                                   <X size={11} />
@@ -385,11 +439,12 @@ export default function Dropdowns() {
                             /* First empty column: inline quick adder */
                             <button
                               type="button"
+                              disabled={busy}
                               onClick={() => {
                                 const val = window.prompt(`Add dropdown option for "${cat.description}":`);
                                 if (val) handleAddOption(cat.id, val);
                               }}
-                              className="flex w-full items-center justify-center gap-1 rounded-lg border border-dashed border-border/70 py-1.5 text-[11px] font-medium text-muted-foreground/80 hover:border-primary hover:bg-primary/5 hover:text-primary transition-colors"
+                              className="flex w-full items-center justify-center gap-1 rounded-lg border border-dashed border-border/70 py-1.5 text-[11px] font-medium text-muted-foreground/80 hover:border-primary hover:bg-primary/5 hover:text-primary transition-colors disabled:opacity-50"
                               title="Add option"
                             >
                               <Plus size={12} /> Add
@@ -408,9 +463,9 @@ export default function Dropdowns() {
             </table>
           </div>
 
-          {filteredCategories.length === 0 && (
+          {!loading && filteredCategories.length === 0 && (
             <div className="p-8 text-center text-xs text-muted-foreground">
-              No matching descriptions or dropdown values found.
+              No matching descriptions or dropdown values found in database.
             </div>
           )}
         </section>

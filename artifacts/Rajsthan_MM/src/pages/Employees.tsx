@@ -24,15 +24,24 @@ export default function Employees() {
   const loadEmployees = async () => {
     try {
       const { data, error } = await supabase
-        .from("staff_members")
+        .from("employees")
         .select("id, name, role, active, created_at")
         .order("name");
 
-      if (error) throw error;
-      setEmployees((data as StaffMember[]) ?? []);
+      if (error) {
+        // Fallback to staff_members if needed
+        const { data: fallback, error: fbError } = await supabase
+          .from("staff_members")
+          .select("id, name, role, active, created_at")
+          .order("name");
+        if (fbError) throw error;
+        setEmployees((fallback as StaffMember[]) ?? []);
+      } else {
+        setEmployees((data as StaffMember[]) ?? []);
+      }
       setMessage("");
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : "Could not load employees.");
+      setMessage(err instanceof Error ? err.message : "Could not load employees from database.");
     }
   };
 
@@ -43,12 +52,21 @@ export default function Employees() {
   const toggleActive = async (employee: StaffMember) => {
     setBusy(true);
     try {
-      const { error } = await supabase
-        .from("staff_members")
-        .update({ active: !employee.active })
+      const nextActive = !employee.active;
+      await supabase
+        .from("employees")
+        .update({ active: nextActive })
         .eq("id", employee.id);
 
-      if (error) throw error;
+      try {
+        await supabase
+          .from("staff_members")
+          .update({ active: nextActive })
+          .eq("name", employee.name);
+      } catch {
+        // ignore sync error
+      }
+
       queryClient.invalidateQueries({ queryKey: getListPeopleQueryKey({ role: employee.role }) });
       await loadEmployees();
     } catch (err) {
@@ -62,12 +80,20 @@ export default function Employees() {
     if (!window.confirm(`Remove ${employee.name} (${employee.role})?`)) return;
     setBusy(true);
     try {
-      const { error } = await supabase
-        .from("staff_members")
+      await supabase
+        .from("employees")
         .delete()
         .eq("id", employee.id);
 
-      if (error) throw error;
+      try {
+        await supabase
+          .from("staff_members")
+          .delete()
+          .eq("name", employee.name);
+      } catch {
+        // ignore sync error
+      }
+
       queryClient.invalidateQueries({ queryKey: getListPeopleQueryKey({ role: employee.role }) });
       await loadEmployees();
     } catch (err) {
