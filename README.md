@@ -1,6 +1,6 @@
-# RK Mines Diesel Ledger
+# Rajsthan M&M Diesel Ledger
 
-Mobile-first daily diesel issue/purchase register for RK Mines, with vehicle
+Mobile-first daily diesel issue/purchase register for Rajsthan M&M, with vehicle
 master management and automatic running stock balances.
 
 This project was built on Replit as a pnpm workspace: an Express API server,

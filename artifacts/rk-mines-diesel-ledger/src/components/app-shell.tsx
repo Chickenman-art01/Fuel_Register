@@ -56,8 +56,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       <aside className={`fixed inset-y-0 left-0 z-50 flex shrink-0 flex-col bg-sidebar text-sidebar-foreground shadow-[3px_0_18px_rgba(29,43,49,.12)] transition-[width,transform] duration-200 md:sticky md:top-0 md:h-screen md:translate-x-0 ${collapsed ? 'w-[76px] -translate-x-full md:translate-x-0' : 'w-64 translate-x-0'}`}>
         <div className={`flex h-[4.4rem] items-center border-b border-sidebar-border/50 ${collapsed ? 'justify-center' : 'justify-between px-4'}`}>
           <Link href="/Fuelentry" className="flex items-center gap-3" data-testid="link-brand">
-            <span className="grid size-9 shrink-0 place-items-center overflow-hidden rounded-full bg-primary shadow-[3px_3px_0_hsl(34_84%_30%)]"><img src="/logo.png" alt="RK Mines" className="size-full object-contain" /></span>
-            {!collapsed && <span className="leading-none"><span className="block text-[13px] font-extrabold tracking-[.18em]">RK MINES</span><span className="mt-1 block font-mono text-[9px] uppercase tracking-[.21em] text-sidebar-foreground/55">Diesel ledger</span></span>}
+            <span className="grid size-9 shrink-0 place-items-center overflow-hidden rounded-full bg-primary shadow-[3px_3px_0_hsl(34_84%_30%)]"><img src="/logo.png" alt="Rajsthan M&M" className="size-full object-contain" /></span>
+            {!collapsed && <span className="leading-none"><span className="block text-[13px] font-extrabold tracking-[.18em]">RAJSTHAN M&M</span><span className="mt-1 block font-mono text-[9px] uppercase tracking-[.21em] text-sidebar-foreground/55">Diesel ledger</span></span>}
           </Link>
           {!collapsed && <button type="button" onClick={() => setCollapsed(true)} className="grid size-8 place-items-center rounded-lg text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground" title="Collapse sidebar" aria-label="Collapse sidebar"><PanelLeftClose size={17} /></button>}
         </div>
@@ -72,11 +72,11 @@ export function AppShell({ children }: { children: ReactNode }) {
       </aside>
       <div className="min-w-0 flex-1">
         <header className="flex h-[4.4rem] items-center justify-between border-b border-border/70 bg-card px-4 shadow-sm md:hidden">
-          <Link href="/Fuelentry" className="flex items-center gap-2"><span className="grid size-8 place-items-center overflow-hidden rounded-full bg-primary"><img src="/logo.png" alt="RK Mines" className="size-full object-contain" /></span><span className="text-xs font-extrabold tracking-[.14em]">RK MINES</span></Link>
+          <Link href="/Fuelentry" className="flex items-center gap-2"><span className="grid size-8 place-items-center overflow-hidden rounded-full bg-primary"><img src="/logo.png" alt="Rajsthan M&M" className="size-full object-contain" /></span><span className="text-xs font-extrabold tracking-[.14em]">RAJSTHAN M&M</span></Link>
           <button type="button" onClick={() => setCollapsed(false)} className="grid size-9 place-items-center rounded-lg text-muted-foreground hover:bg-muted" title="Open navigation" aria-label="Open navigation"><Menu size={19} /></button>
         </header>
         <main className="mx-auto w-full max-w-[1500px] px-4 pb-12 pt-6 sm:px-7 sm:pt-8">{children}</main>
-        <footer className="mx-auto flex max-w-[1500px] items-center justify-between px-4 pb-7 text-[10px] font-semibold uppercase tracking-[.14em] text-muted-foreground/65 sm:px-7"><span>RK Mines / Daily control</span><span className="flex items-center gap-1.5"><CircleHelp size={12} /> Internal register</span></footer>
+        <footer className="mx-auto flex max-w-[1500px] items-center justify-between px-4 pb-7 text-[10px] font-semibold uppercase tracking-[.14em] text-muted-foreground/65 sm:px-7"><span>Rajsthan M&M / Daily control</span><span className="flex items-center gap-1.5"><CircleHelp size={12} /> Internal register</span></footer>
       </div>
     </div>
   );

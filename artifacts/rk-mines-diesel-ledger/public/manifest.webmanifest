@@ -1,7 +1,7 @@
 {
-  "name": "RK Mines Diesel Ledger",
-  "short_name": "RK Mines Ledger",
-  "description": "Fuel and diesel ledger for RK Mines",
+  "name": "Rajsthan M&M Diesel Ledger",
+  "short_name": "Rajsthan M&M",
+  "description": "Fuel and diesel ledger for Rajsthan M&M",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

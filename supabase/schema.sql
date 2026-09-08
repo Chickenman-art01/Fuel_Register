@@ -1,4 +1,4 @@
--- RK Mines Diesel Ledger
+-- Rajsthan M&M Diesel Ledger
 -- Run this once in the Supabase SQL Editor for the connected project.
 
 create table if not exists public.vehicles (

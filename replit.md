@@ -1,6 +1,6 @@
-# RK Mines Diesel Ledger
+# Rajsthan M&M Diesel Ledger
 
-Mobile-first daily diesel issue and purchase register for RK Mines, with vehicle master management and automatic running stock balances.
+Mobile-first daily diesel issue and purchase register for Rajsthan M&M, with vehicle master management and automatic running stock balances.
 
 ## Run & Operate
 

@@ -11,7 +11,7 @@ type CachedValue = {
   updatedAt: string;
 };
 
-const databaseName = 'rk-mines-ledger';
+const databaseName = 'rajsthan-mm-ledger';
 const databaseVersion = 1;
 let databasePromise: Promise<IDBDatabase> | null = null;
 

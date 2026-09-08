@@ -14,7 +14,7 @@ export function useAppRole(): AppRole {
   return useContext(AuthRoleContext);
 }
 
-const passkeyStorageKey = 'rk-mines-passkey-id';
+const passkeyStorageKey = 'rajsthan-mm-passkey-id';
 
 function toBase64Url(bytes: Uint8Array): string {
   let binary = '';
@@ -40,11 +40,11 @@ async function registerPasskey(): Promise<void> {
   const credential = await navigator.credentials.create({
     publicKey: {
       challenge: crypto.getRandomValues(new Uint8Array(32)),
-      rp: { name: 'RK Mines Diesel Ledger', id: window.location.hostname },
+      rp: { name: 'Rajsthan M&M Diesel Ledger', id: window.location.hostname },
       user: {
         id: crypto.getRandomValues(new Uint8Array(16)),
-        name: 'rk-mines-user',
-        displayName: 'RK Mines user',
+        name: 'rajsthan-mm-user',
+        displayName: 'Rajsthan M&M user',
       },
       pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
       authenticatorSelection: { residentKey: 'required', userVerification: 'required' },
@@ -57,7 +57,7 @@ async function registerPasskey(): Promise<void> {
 }
 
 async function verifyPasskey(): Promise<void> {
-  const credentialId = localStorage.getItem(passkeyStorageKey);
+  const credentialId = localStorage.getItem(passkeyStorageKey) || localStorage.getItem('rk-mines-passkey-id');
   if (!credentialId || !canUsePasskeys()) throw new Error('Fingerprint login is not available.');
   const credential = await navigator.credentials.get({
     publicKey: {
@@ -181,7 +181,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
   return (
     <main className="grid min-h-screen place-items-center bg-background px-5 py-10">
       <section className="w-full max-w-md rounded-2xl border border-card-border bg-card p-6 shadow-[0_12px_35px_rgba(40,53,58,.08)]">
-        <div className="mb-6 flex items-center gap-3"><span className="grid size-10 place-items-center rounded-xl bg-primary/15 text-primary"><ShieldCheck size={20} /></span><div><h1 className="font-extrabold">RK Mines Fuel Ledger</h1><p className="text-xs text-muted-foreground">Secure register access</p></div></div>
+        <div className="mb-6 flex items-center gap-3"><span className="grid size-10 place-items-center rounded-xl bg-primary/15 text-primary"><ShieldCheck size={20} /></span><div><h1 className="font-extrabold">Rajsthan M&M Fuel Ledger</h1><p className="text-xs text-muted-foreground">Secure register access</p></div></div>
         {passkeyLocked && (
           <div className="mb-5 rounded-xl border border-primary/25 bg-primary/5 p-4 text-center">
             <Fingerprint className="mx-auto mb-2 text-primary" size={28} />

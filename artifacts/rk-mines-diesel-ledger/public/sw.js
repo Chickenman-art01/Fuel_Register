@@ -1,4 +1,4 @@
-const CACHE_NAME = 'rk-mines-ledger-v1';
+const CACHE_NAME = 'rajsthan-mm-ledger-v1';
 const APP_SHELL = ['/', '/index.html', '/logo.png', '/pwa-192.png', '/pwa-512.png', '/manifest.webmanifest'];
 
 self.addEventListener('install', (event) => {
