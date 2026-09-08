@@ -26,7 +26,7 @@ artifacts/Rajsthan_MM/
 │   │   ├── use-mobile.tsx               # Media query hook for mobile screen detection
 │   │   └── use-toast.ts                 # Imperative toast notification state hook
 │   ├── lib/                             # Core utilities and data adapters
-│   │   ├── admin-users.ts               # Edge Function API client for user administration
+│   │   ├── commander-users.ts           # Edge Function API client for commander user control
 │   │   ├── offline-api.ts               # Offline-first data caching and mutation queue
 │   │   ├── offline-store.ts             # IndexedDB wrapper for local persistence
 │   │   ├── supabase.ts                  # Browser Supabase client instance
@@ -106,7 +106,7 @@ artifacts/Rajsthan_MM/
   - Fallback email/password login and password reset requests via Supabase Auth.
   - Provides `useAppRole()` context ('commander' vs 'operator') to child components.
 - **[`user-management.tsx`](file:///workspaces/Rajsthan_M&M/artifacts/Rajsthan_MM/src/components/user-management.tsx)**:
-  - Administrative panel visible to commanders to create, modify roles for, and delete desk operator accounts.
+  - Control panel visible to commanders to create, modify roles for, and delete desk operator accounts.
 - **[`error-boundary.tsx`](file:///workspaces/Rajsthan_M&M/artifacts/Rajsthan_MM/src/components/error-boundary.tsx)**:
   - React error boundary providing recovery options if an unexpected render exception occurs.
 

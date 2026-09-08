@@ -90,7 +90,11 @@ export function AuthGate({ children }: { children: ReactNode }) {
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
       setSignedIn(Boolean(data.session));
-      setRole(getUserRole(data.session?.user ?? null));
+      const userRole = getUserRole(data.session?.user ?? null);
+      setRole(userRole);
+      if (userRole === 'commander' && (window.location.pathname === '/' || window.location.pathname === '/Fuelentry')) {
+        window.history.replaceState(null, '', '/controlpanal');
+      }
       setReady(true);
     });
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
@@ -100,7 +104,11 @@ export function AuthGate({ children }: { children: ReactNode }) {
         setSignedIn(false);
       }
       if (event === 'SIGNED_IN') {
-        setRole(getUserRole(session?.user ?? null));
+        const userRole = getUserRole(session?.user ?? null);
+        setRole(userRole);
+        if (userRole === 'commander' && (window.location.pathname === '/' || window.location.pathname === '/Fuelentry')) {
+          window.history.replaceState(null, '', '/controlpanal');
+        }
         if (!localStorage.getItem(passkeyStorageKey)) setSignedIn(true);
       }
       setReady(true);
@@ -121,8 +129,14 @@ export function AuthGate({ children }: { children: ReactNode }) {
     if (result.error) setMessage(result.error.message);
     else {
       if (mode === 'sign-in') {
+        const user = 'user' in result.data ? (result.data as { user: { app_metadata?: Record<string, unknown> } | null }).user : null;
+        const nextRole = getUserRole(user);
+        setRole(nextRole);
         setSignedIn(true);
         setPasskeyLocked(false);
+        if (nextRole === 'commander' && (window.location.pathname === '/' || window.location.pathname === '/Fuelentry')) {
+          window.history.replaceState(null, '', '/controlpanal');
+        }
       } else if (mode === 'reset-request') {
         setMessage('Password reset email sent. Check your inbox.');
       } else {
@@ -141,6 +155,12 @@ export function AuthGate({ children }: { children: ReactNode }) {
       await verifyPasskey();
       setPasskeyLocked(false);
       setSignedIn(true);
+      const { data } = await supabase.auth.getSession();
+      const nextRole = getUserRole(data.session?.user ?? null);
+      setRole(nextRole);
+      if (nextRole === 'commander' && (window.location.pathname === '/' || window.location.pathname === '/Fuelentry')) {
+        window.history.replaceState(null, '', '/controlpanal');
+      }
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Fingerprint verification failed.');
     } finally {

@@ -97,4 +97,4 @@ The repository supports direct deployment to Supabase for managed PostgreSQL, Au
   - Validates Supabase JWT authorization tokens via `authClient.auth.getUser(token)`.
   - Enforces Role-Based Access Control (RBAC): `commander` accounts can manage vehicles and users; `operator` accounts have entry access.
   - Implements running stock balance calculations (`recalculateBalances()`).
-  - Provides administrative user endpoints (`listUsers`, `createUser`, `updateUser`, `deleteUser`) via the Supabase Service Role client.
+  - Provides commander user endpoints (`listUsers`, `createUser`, `updateUser`, `deleteUser`) via the Supabase Service Role client.

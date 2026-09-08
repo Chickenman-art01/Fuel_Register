@@ -5,7 +5,7 @@ const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
 const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 const authClient = createClient(supabaseUrl, supabaseAnonKey);
 const db = createClient(supabaseUrl, serviceRoleKey ?? supabaseAnonKey);
-const adminClient = serviceRoleKey ? createClient(supabaseUrl, serviceRoleKey) : null;
+const commanderClient = serviceRoleKey ? createClient(supabaseUrl, serviceRoleKey) : null;
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -180,13 +180,13 @@ function roleValue(value: unknown): 'commander' | 'operator' | null {
   return value === 'commander' || value === 'operator' ? value : null;
 }
 
-function adminUnavailable(): Response {
-  return errorResponse('User administration is not configured. Add SUPABASE_SERVICE_ROLE_KEY to the Edge Function secrets.', 503);
+function commanderUnavailable(): Response {
+  return errorResponse('Commander user service is not configured. Add SUPABASE_SERVICE_ROLE_KEY to the Edge Function secrets.', 503);
 }
 
 async function listUsers(): Promise<Response> {
-  if (!adminClient) return adminUnavailable();
-  const result = await adminClient.auth.admin.listUsers({ page: 1, perPage: 1000 });
+  if (!commanderClient) return commanderUnavailable();
+  const result = await commanderClient.auth.admin.listUsers({ page: 1, perPage: 1000 });
   if (result.error) return errorResponse(result.error.message, 400);
   return response(result.data.users.map((user) => ({
     id: user.id,
@@ -197,12 +197,12 @@ async function listUsers(): Promise<Response> {
 }
 
 async function createUser(body: Record<string, unknown>): Promise<Response> {
-  if (!adminClient) return adminUnavailable();
+  if (!commanderClient) return commanderUnavailable();
   const email = String(body.email ?? '').trim().toLowerCase();
   const password = String(body.password ?? '');
   const role = roleValue(body.role);
   if (!email || password.length < 6 || !role) return errorResponse('Email, password of at least 6 characters, and a valid role are required');
-  const result = await adminClient.auth.admin.createUser({
+  const result = await commanderClient.auth.admin.createUser({
     email,
     password,
     email_confirm: true,
@@ -213,17 +213,17 @@ async function createUser(body: Record<string, unknown>): Promise<Response> {
 }
 
 async function updateUser(id: string, body: Record<string, unknown>): Promise<Response> {
-  if (!adminClient) return adminUnavailable();
+  if (!commanderClient) return commanderUnavailable();
   const role = roleValue(body.role);
   if (!role) return errorResponse('A valid role is required');
-  const result = await adminClient.auth.admin.updateUserById(id, { app_metadata: { role } });
+  const result = await commanderClient.auth.admin.updateUserById(id, { app_metadata: { role } });
   if (result.error) return errorResponse(result.error.message, 400);
   return response({ id: result.data.user.id, email: result.data.user.email ?? '', role });
 }
 
 async function deleteUser(id: string): Promise<Response> {
-  if (!adminClient) return adminUnavailable();
-  const result = await adminClient.auth.admin.deleteUser(id);
+  if (!commanderClient) return commanderUnavailable();
+  const result = await commanderClient.auth.admin.deleteUser(id);
   if (result.error) return errorResponse(result.error.message, 400);
   return new Response(null, { status: 204, headers: corsHeaders });
 }

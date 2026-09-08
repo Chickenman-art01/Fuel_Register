@@ -6,7 +6,7 @@ import {
   listManagedUsers,
   type ManagedUser,
   updateManagedUser,
-} from '@/lib/admin-users';
+} from '@/lib/commander-users';
 
 type UserRole = 'commander' | 'operator';
 
@@ -74,7 +74,7 @@ export function UserManagement() {
   return (
     <section className="mb-5 rounded-2xl border border-card-border bg-card shadow-[0_7px_22px_rgba(40,53,58,.045)]" data-testid="panel-user-management">
       <div className="flex items-center justify-between border-b border-border/70 px-4 py-4 sm:px-5">
-        <div><div className="flex items-center gap-2"><span className="grid size-7 place-items-center rounded-lg bg-primary/15 text-primary"><Users size={15} /></span><h2 className="font-extrabold">User access</h2></div><p className="mt-1 text-xs text-muted-foreground">Commanders create and manage fuel desk accounts.</p></div>
+        <div><div className="flex items-center gap-2"><span className="grid size-7 place-items-center rounded-lg bg-primary/15 text-primary"><Users size={15} /></span><h2 className="font-extrabold">User access</h2></div></div>
         <button type="button" onClick={() => void loadUsers()} className="grid size-8 place-items-center rounded-lg text-muted-foreground hover:bg-muted" title="Refresh users" aria-label="Refresh users"><RefreshCw size={15} /></button>
       </div>
       <form onSubmit={createUser} className="grid gap-3 border-b border-border/70 p-4 sm:grid-cols-[1.2fr_1fr_auto_auto] sm:items-end sm:px-5">

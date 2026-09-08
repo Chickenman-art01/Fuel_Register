@@ -5,11 +5,15 @@ import { AuthGate, useAppRole } from '@/components/auth-gate';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import NotFound from '@/pages/not-found';
-import Dashboard from '@/pages/dashboard';
-import Vehicles from '@/pages/vehicles';
+import FuelRegister from '@/pages/FuelRegister';
+import ControlPanal from '@/pages/ControlPanal';
+import Vehicles from '@/pages/Vehicles';
+import Users from '@/pages/Users';
+import Employees from '@/pages/Employees';
 import {
   Route,
   Switch,
+  Redirect,
   useLocation,
   Router as WouterRouter,
 } from 'wouter';
@@ -23,10 +27,28 @@ function Router() {
     // survives a page crash.
     <RoutedErrorBoundary>
       <Switch>
-         <Route path="/" component={Dashboard} />
-         <Route path="/Fuelentry" component={Dashboard} />
-         <Route path="/controlpanal">{role === 'commander' ? <Vehicles /> : <Dashboard />}</Route>
-         <Route path="/vehicles">{role === 'commander' ? <Vehicles /> : <Dashboard />}</Route>
+        <Route path="/">
+          {role === 'commander' ? <Redirect to="/controlpanal" replace /> : <FuelRegister />}
+        </Route>
+        <Route path="/Fuelentry" component={FuelRegister} />
+        <Route path="/fuelregister">
+          <Redirect to="/Fuelentry" replace />
+        </Route>
+        <Route path="/controlpanal">
+          {role === 'commander' ? <ControlPanal /> : <Redirect to="/Fuelentry" replace />}
+        </Route>
+        <Route path="/vehicles">
+          <Vehicles />
+        </Route>
+        <Route path="/vahicles">
+          <Redirect to="/vehicles" replace />
+        </Route>
+        <Route path="/users">
+          {role === 'commander' ? <Users /> : <Redirect to="/Fuelentry" replace />}
+        </Route>
+        <Route path="/employees">
+          {role === 'commander' ? <Employees /> : <Redirect to="/Fuelentry" replace />}
+        </Route>
         <Route component={NotFound} />
       </Switch>
     </RoutedErrorBoundary>

@@ -18,7 +18,7 @@ The repository is organized as a modern TypeScript **monorepo** powered by **pnp
                     +----------------------+----------------------+
                     |                      |                      |
             [Local Storage / IDB]   [React Query Hooks]   [Supabase Auth / DB]
-             Offline Queue & Cache    (Generated SDK)       Passkey & Admin API
+             Offline Queue & Cache    (Generated SDK)     Passkey & Commander API
                     |                      |                      |
                     +----------------------+----------------------+
                                            |

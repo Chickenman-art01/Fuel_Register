@@ -66,4 +66,4 @@ This document explains every file located in the root directory of the project, 
 - **`DATABASE_URL`**: Postgres connection string used by Drizzle ORM and migrations.
 - **`VITE_SUPABASE_URL`**: Supabase project endpoint used by the browser client.
 - **`VITE_SUPABASE_ANON_KEY`**: Public Supabase anonymous API key for client-side queries.
-- **`SUPABASE_SERVICE_ROLE_KEY`**: Privileged key used by Edge Functions for user administration.
+- **`SUPABASE_SERVICE_ROLE_KEY`**: Privileged key used by Edge Functions for commander user control.
