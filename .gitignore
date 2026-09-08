@@ -56,3 +56,4 @@ Thumbs.db
 
 # Supabase CLI local metadata
 supabase/.temp/
+.env*
