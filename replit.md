@@ -22,13 +22,13 @@ Mobile-first daily diesel issue and purchase register for Rajsthan M&M, with veh
 
 ## Where things live
 
-- `artifacts/rk-mines-diesel-ledger/` — Vite web app with dashboard and vehicle master routes
+- `artifacts/Rajsthan_MM/` — Vite web app with dashboard and vehicle master routes
 - `artifacts/api-server/src/routes/vehicles.ts` — vehicle master CRUD and archive handlers
 - `artifacts/api-server/src/routes/diesel.ts` — diesel issue/purchase records, running balances, and daily summary
 - `lib/api-spec/openapi.yaml` — source of truth for API contracts
 - `lib/db/src/schema/vehicles.ts` and `lib/db/src/schema/diesel-records.ts` — database schema
 - `supabase/schema.sql` — Supabase table and starter-data script
-- `artifacts/rk-mines-diesel-ledger/src/index.css` — app theme tokens and responsive styles
+- `artifacts/Rajsthan_MM/src/index.css` — app theme tokens and responsive styles
 
 ## Architecture decisions
 

@@ -35,7 +35,7 @@ This document explains every file located in the root directory of the project, 
 
 ### 2. `pnpm-workspace.yaml`
 - **Role**: Declares the workspace packages that make up the repository:
-  - `artifacts/*`: Deployable applications (`rk-mines-diesel-ledger`, `api-server`, `mockup-sandbox`).
+  - `artifacts/*`: Deployable applications (`Rajsthan_MM`, `api-server`, `mockup-sandbox`).
   - `lib/*`: Shared libraries (`db`, `api-spec`, `api-zod`, `api-client-react`).
   - `scripts`: Automation tools.
 - **Catalog Feature**: Uses pnpm catalogs to centrally manage version numbers for React, Tailwind, TanStack Query, Radix UI, Vite, etc., guaranteeing consistent versions across all packages.
@@ -53,8 +53,8 @@ This document explains every file located in the root directory of the project, 
   ```json
   {
     "installCommand": "pnpm install --frozen-lockfile",
-    "buildCommand": "pnpm --filter @workspace/rk-mines-diesel-ledger build",
-    "outputDirectory": "artifacts/rk-mines-diesel-ledger/dist/public",
+    "buildCommand": "pnpm --filter @workspace/rajsthan-mm build",
+    "outputDirectory": "artifacts/Rajsthan_MM/dist/public",
     "rewrites": [
       { "source": "/((?!api/).*)", "destination": "/index.html" }
     ]

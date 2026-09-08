@@ -1,7 +1,7 @@
 {
   "installCommand": "pnpm install --frozen-lockfile",
-  "buildCommand": "pnpm --filter @workspace/rk-mines-diesel-ledger build",
-  "outputDirectory": "artifacts/rk-mines-diesel-ledger/dist/public",
+  "buildCommand": "pnpm --filter @workspace/rajsthan-mm build",
+  "outputDirectory": "artifacts/Rajsthan_MM/dist/public",
   "rewrites": [
     {
       "source": "/((?!api/).*)",

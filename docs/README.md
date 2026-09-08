@@ -12,7 +12,7 @@ The repository is organized as a modern TypeScript **monorepo** powered by **pnp
                       +------------------------------------------+
                       |         Web Client (PWA)                 |
                       |   (Vite + React 19 + Tailwind v4)        |
-                      |   artifacts/rk-mines-diesel-ledger       |
+                      |   artifacts/Rajsthan_MM                  |
                       +--------------------+---------------------+
                                            |
                     +----------------------+----------------------+
@@ -42,7 +42,7 @@ The repository is organized as a modern TypeScript **monorepo** powered by **pnp
 ├── artifacts/                           # Deployable applications & sandboxes
 │   ├── api-server/                      # Express 5 REST API server (Node.js)
 │   ├── mockup-sandbox/                  # Component prototyping sandbox
-│   └── rk-mines-diesel-ledger/          # Main production web application (PWA)
+│   └── Rajsthan_MM/                     # Main production web application (PWA)
 ├── docs/                                # Study guides and codebase documentation
 │   ├── README.md                        # Master index and architecture map (this file)
 │   ├── root-and-config.md               # Root workspace files & configuration
@@ -94,7 +94,7 @@ Each section below links to a dedicated, detailed study guide:
 |---|---|---|
 | **Typecheck Everything** | `pnpm run typecheck` | Validates TypeScript across all libraries and applications |
 | **Build Everything** | `pnpm run build` | Compiles API bundles, shared libraries, and client assets |
-| **Run Frontend Dev** | `pnpm --filter @workspace/rk-mines-diesel-ledger run dev` | Runs Vite dev server on port 5173 |
+| **Run Frontend Dev** | `pnpm --filter @workspace/rajsthan-mm run dev` | Runs Vite dev server on port 5173 |
 | **Run API Server Dev** | `pnpm --filter @workspace/api-server run dev` | Runs Express dev server on port 5000 |
 | **Regenerate API SDK** | `pnpm --filter @workspace/api-spec run codegen` | Generates React Query hooks and Zod schemas from OpenAPI |
 | **Deploy to Vercel** | `vercel --prod` | Deploys static build to production hosting |

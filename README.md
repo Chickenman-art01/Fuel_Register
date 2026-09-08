@@ -20,7 +20,7 @@ runs Node.js and Postgres.
 ## Project layout
 
 ```
-artifacts/rk-mines-diesel-ledger/   Vite web app (dashboard + vehicle master)
+artifacts/Rajsthan_MM/              Vite web app (dashboard + vehicle master)
 artifacts/api-server/               Express API (routes, build script)
 artifacts/mockup-sandbox/           Design sandbox, not required to run the app
 lib/db/                             Drizzle schema + DB client
@@ -81,7 +81,7 @@ pnpm --filter @workspace/api-server run dev
 In another terminal, start the web client:
 
 ```bash
-pnpm --filter @workspace/rk-mines-diesel-ledger run dev
+pnpm --filter @workspace/rajsthan-mm run dev
 ```
 
 The web client makes relative `/api/...` calls, so in production it expects
@@ -121,7 +121,7 @@ variables.
 The web app is a static Vite build, which Vercel serves well:
 1. Import the repo into Vercel and keep the **root directory** set to the
   repository root. The included `vercel.json` builds the frontend workspace
-  and serves `artifacts/rk-mines-diesel-ledger/dist/public`.
+  and serves `artifacts/Rajsthan_MM/dist/public`.
 2. Deploy the API separately as a Node service, with `DATABASE_URL` and
   `PORT=5000` configured in that service.
 3. Add the Vercel environment variable `VITE_API_URL` with the public API URL,
