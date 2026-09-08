@@ -23,6 +23,21 @@ export interface VehicleInput {
   vehicleName: string;
 }
 
+export type PersonRole = typeof PersonRole[keyof typeof PersonRole];
+
+
+export const PersonRole = {
+  operator: 'operator',
+  issuer: 'issuer',
+} as const;
+
+export interface Person {
+  id: number;
+  name: string;
+  role: PersonRole;
+  active: boolean;
+}
+
 export interface VehicleUpdate {
   /** @minLength 1 */
   vehicleNo?: string;
@@ -72,6 +87,18 @@ export interface DieselSummary {
   recordCount: number;
   recentRecords: DieselRecord[];
 }
+
+export type ListPeopleParams = {
+role: ListPeopleRole;
+};
+
+export type ListPeopleRole = typeof ListPeopleRole[keyof typeof ListPeopleRole];
+
+
+export const ListPeopleRole = {
+  operator: 'operator',
+  issuer: 'issuer',
+} as const;
 
 export type GetDieselSummaryParams = {
 date: string;

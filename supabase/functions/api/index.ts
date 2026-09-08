@@ -128,6 +128,18 @@ async function listVehicles(): Promise<Response> {
   })));
 }
 
+async function listPeople(role: string): Promise<Response> {
+  if (role !== 'operator' && role !== 'issuer') return errorResponse('Role must be operator or issuer');
+  const { data, error } = await db
+    .from('staff_members')
+    .select('id, name, role, active')
+    .eq('role', role)
+    .eq('active', true)
+    .order('name');
+  if (error) throw error;
+  return response((data ?? []).map((row) => ({ id: Number(row.id), name: row.name, role: row.role, active: row.active })));
+}
+
 async function createVehicle(body: Record<string, unknown>): Promise<Response> {
   const vehicleNo = String(body.vehicleNo ?? '').trim();
   const vehicleName = String(body.vehicleName ?? '').trim();
@@ -254,6 +266,7 @@ Deno.serve(async (request) => {
     const segments = pathname.split('/').filter(Boolean);
     const body = request.method === 'GET' || request.method === 'DELETE' ? {} : await request.json() as Record<string, unknown>;
     if (request.method === 'GET' && pathname === '/vehicles') return await listVehicles();
+    if (request.method === 'GET' && pathname === '/people') return await listPeople(url.searchParams.get('role') ?? '');
     if (request.method === 'POST' && pathname === '/vehicles') return await createVehicle(body);
     if (request.method === 'PATCH' && segments[0] === 'vehicles' && segments[1]) return await updateVehicle(Number(segments[1]), body);
     if (request.method === 'DELETE' && segments[0] === 'vehicles' && segments[1]) return await archiveVehicle(Number(segments[1]));

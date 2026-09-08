@@ -9,7 +9,6 @@ import {
 } from 'lucide-react';
 import {
   getGetDieselSummaryQueryKey, getListDieselRecordsQueryKey, getListVehiclesQueryKey,
-  useListVehicles,
 } from '@workspace/api-client-react';
 import type { DieselRecord, DieselRecordInput, DieselSummary, Vehicle } from '@workspace/api-client-react';
 import { Button } from '@/components/ui/button';
@@ -19,6 +18,7 @@ import { AppShell } from '@/components/app-shell';
 import {
   useOfflineCreateDieselRecord, useOfflineDeleteDieselRecord, useOfflineGetDieselSummary,
   useOfflineListDieselRecords, useOfflineListVehicles, useOfflineUpdateDieselRecord,
+  useOfflineListPeople,
 } from '@/lib/offline-api';
 
 const today = () => {
@@ -74,7 +74,7 @@ function SummaryCards({ summary }: { summary: DieselSummary }) {
   );
 }
 
-function RecordFormPanel({ date, vehicles, editing, summary, onDone, onDateChange }: { date: string; vehicles: Vehicle[]; editing: DieselRecord | null; summary?: DieselSummary; onDone: () => void; onDateChange: (date: string) => void }) {
+function RecordFormPanel({ date, vehicles, operators, issuers, editing, summary, onDone, onDateChange }: { date: string; vehicles: Vehicle[]; operators: string[]; issuers: string[]; editing: DieselRecord | null; summary?: DieselSummary; onDone: () => void; onDateChange: (date: string) => void }) {
   const queryClient = useQueryClient();
   const create = useOfflineCreateDieselRecord();
   const update = useOfflineUpdateDieselRecord();
@@ -177,8 +177,8 @@ function RecordFormPanel({ date, vehicles, editing, summary, onDone, onDateChang
             <FormField control={form.control} name="dieselPurchased" render={({ field }) => <FormItem><FormLabel className="text-[11px] font-bold uppercase tracking-[.1em] text-muted-foreground">Diesel purchased (L)</FormLabel><FormControl><Input type="number" min="0" step="0.1" {...field} data-testid="input-diesel-purchased" /></FormControl><FormMessage /></FormItem>} />
           )}
           <div className="grid grid-cols-2 gap-3">
-            <FormField control={form.control} name="operator" render={({ field }) => <FormItem><FormLabel className="text-[11px] font-bold uppercase tracking-[.1em] text-muted-foreground">Operator</FormLabel><FormControl><Input {...field} placeholder="Full name" data-testid="input-operator" /></FormControl><FormMessage /></FormItem>} />
-            <FormField control={form.control} name="issuer" render={({ field }) => <FormItem><FormLabel className="text-[11px] font-bold uppercase tracking-[.1em] text-muted-foreground">Issued by</FormLabel><FormControl><Input {...field} placeholder="Full name" data-testid="input-issuer" /></FormControl><FormMessage /></FormItem>} />
+            <FormField control={form.control} name="operator" render={({ field }) => <FormItem><FormLabel className="text-[11px] font-bold uppercase tracking-[.1em] text-muted-foreground">Operator</FormLabel><FormControl><select {...field} value={field.value || ''} className="flex h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15" data-testid="select-operator"><option value="" disabled>Select operator</option>{operators.map((name) => <option key={name} value={name}>{name}</option>)}</select></FormControl><FormMessage /></FormItem>} />
+            <FormField control={form.control} name="issuer" render={({ field }) => <FormItem><FormLabel className="text-[11px] font-bold uppercase tracking-[.1em] text-muted-foreground">Issued by</FormLabel><FormControl><select {...field} value={field.value || ''} className="flex h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15" data-testid="select-issuer"><option value="" disabled>Select issuer</option>{issuers.map((name) => <option key={name} value={name}>{name}</option>)}</select></FormControl><FormMessage /></FormItem>} />
           </div>
           <div className="flex items-center justify-between border-t border-border/70 pt-4">
             <span className="text-[11px] text-muted-foreground">{summary ? `Closing after ${entryMode}: ${litres(summary.closingBalance)}` : 'Balances update after save'}</span>
@@ -211,6 +211,8 @@ export default function Dashboard() {
   const summaryQuery = useOfflineGetDieselSummary({ date });
   const recordsQuery = useOfflineListDieselRecords({ date });
   const vehiclesQuery = useOfflineListVehicles();
+  const operatorsQuery = useOfflineListPeople({ role: 'operator' });
+  const issuersQuery = useOfflineListPeople({ role: 'issuer' });
   const deleteRecord = useOfflineDeleteDieselRecord(date);
   const vehiclesResponseInvalid = vehiclesQuery.data != null && !Array.isArray(vehiclesQuery.data);
   const vehicles = useMemo(() => (Array.isArray(vehiclesQuery.data) ? vehiclesQuery.data as Vehicle[] : []).filter((v) => v.active), [vehiclesQuery.data]);
@@ -234,7 +236,7 @@ export default function Dashboard() {
         {hasError ? <div className="mb-5 flex items-center justify-between gap-3 rounded-xl border border-destructive/25 bg-destructive/5 px-4 py-3 text-sm text-destructive" data-testid="status-dashboard-error"><span className="flex items-center gap-2"><TriangleAlert size={16} /> Some ledger data could not be loaded.</span><button type="button" onClick={() => { summaryQuery.refetch(); recordsQuery.refetch(); vehiclesQuery.refetch(); }} className="flex items-center gap-1.5 font-bold underline" data-testid="button-retry-dashboard"><RefreshCw size={13} /> Retry</button></div> : null}
         {summaryQuery.isLoading ? <SummarySkeleton /> : summary ? <SummaryCards summary={summary} /> : <div className="rounded-2xl border border-dashed border-card-border p-8 text-center text-sm text-muted-foreground" data-testid="empty-summary">No summary available for this date.</div>}
         <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(310px,370px)_1fr]">
-          <RecordFormPanel date={date} vehicles={vehicles} editing={editing} summary={summary} onDone={() => setEditing(null)} onDateChange={changeDate} />
+          <RecordFormPanel date={date} vehicles={vehicles} operators={(operatorsQuery.data ?? []).map((person) => person.name)} issuers={(issuersQuery.data ?? []).map((person) => person.name)} editing={editing} summary={summary} onDone={() => setEditing(null)} onDateChange={changeDate} />
           {recordsQuery.isLoading ? <div className="min-h-[300px] animate-pulse-soft rounded-2xl bg-muted" data-testid="skeleton-records" /> : <RecentRecords records={records} onEdit={setEditing} onDelete={handleDelete} deleting={deleteRecord.isPending} />}
         </div>
         {deleteRecord.isError && <p className="mt-3 flex items-center gap-2 text-xs font-semibold text-destructive" data-testid="status-delete-record-error"><TriangleAlert size={14} /> Could not delete this movement. Refresh and try again.</p>}

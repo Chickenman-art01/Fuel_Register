@@ -85,6 +85,22 @@ export const DeleteVehicleResponse = zod.void()
 
 
 /**
+ * @summary List active operators or issuers
+ */
+export const ListPeopleQueryParams = zod.object({
+  "role": zod.enum(['operator', 'issuer'])
+})
+
+export const ListPeopleResponseItem = zod.object({
+  "id": zod.number().int(),
+  "name": zod.string(),
+  "role": zod.enum(['operator', 'issuer']),
+  "active": zod.boolean()
+})
+export const ListPeopleResponse = zod.array(ListPeopleResponseItem)
+
+
+/**
  * @summary Get stock summary and recent activity
  */
 export const GetDieselSummaryQueryParams = zod.object({

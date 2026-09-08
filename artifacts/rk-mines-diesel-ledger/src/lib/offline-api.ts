@@ -7,6 +7,7 @@ import {
   getDieselSummary,
   listDieselRecords,
   listVehicles,
+  listPeople,
   updateDieselRecord,
   updateVehicle,
 } from '@workspace/api-client-react';
@@ -19,6 +20,8 @@ import type {
   Vehicle,
   VehicleInput,
   VehicleUpdate,
+  ListPeopleParams,
+  Person,
 } from '@workspace/api-client-react';
 import {
   getCreateDieselRecordMutationOptions,
@@ -28,6 +31,7 @@ import {
   getGetDieselSummaryQueryKey,
   getListDieselRecordsQueryKey,
   getListVehiclesQueryKey,
+  getListPeopleQueryKey,
   getUpdateDieselRecordMutationOptions,
   getUpdateVehicleMutationOptions,
 } from '@workspace/api-client-react';
@@ -36,6 +40,7 @@ import { addOfflineQueue, listOfflineQueue, readCache, removeOfflineQueueItem, r
 const vehicleCacheKey = 'vehicles';
 const recordsCacheKey = (date: string) => `diesel-records:${date}`;
 const summaryCacheKey = (date: string) => `diesel-summary:${date}`;
+const peopleCacheKey = (role: string) => `people:${role}`;
 
 type OfflineError = { status?: number };
 
@@ -157,6 +162,13 @@ async function optimisticRecordDelete(id: number, date?: string): Promise<void> 
 
 export function useOfflineListVehicles() {
   return useQuery({ queryKey: getListVehiclesQueryKey(), queryFn: () => cachedQuery(vehicleCacheKey, listVehicles) });
+}
+
+export function useOfflineListPeople(params: ListPeopleParams) {
+  return useQuery({
+    queryKey: getListPeopleQueryKey(params),
+    queryFn: () => cachedQuery<Person[]>(peopleCacheKey(params.role), () => listPeople(params)),
+  });
 }
 
 export function useOfflineListDieselRecords(params: ListDieselRecordsParams) {
