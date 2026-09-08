@@ -5,6 +5,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { syncOfflineQueue } from '@/lib/offline-api';
 import { getOfflineQueueCount } from '@/lib/offline-store';
 import { useAppRole } from '@/components/auth-gate';
+import { ProfileCorner } from '@/components/profile-corner';
 
 export function AppShell({ children }: { children: ReactNode }) {
   const [location] = useLocation();
@@ -55,6 +56,15 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="noise flex min-h-[100dvh] bg-background">
+      {/* Mobile backdrop when sidebar is open */}
+      {!collapsed && (
+        <div
+          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[1px] md:hidden"
+          onClick={() => setCollapsed(true)}
+          aria-hidden="true"
+        />
+      )}
+
       <aside className={`fixed inset-y-0 left-0 z-50 flex shrink-0 flex-col bg-sidebar text-sidebar-foreground shadow-[3px_0_18px_rgba(29,43,49,.12)] transition-[width,transform] duration-200 md:sticky md:top-0 md:h-screen md:translate-x-0 ${collapsed ? 'w-[76px] -translate-x-full md:translate-x-0' : 'w-64 translate-x-0'}`}>
         <div className={`flex h-[4.4rem] items-center border-b border-sidebar-border/50 ${collapsed ? 'justify-center' : 'justify-between px-4'}`}>
           <Link href={homeHref} className="flex items-center gap-3" data-testid="link-brand">
@@ -72,13 +82,44 @@ export function AppShell({ children }: { children: ReactNode }) {
           <button type="button" onClick={() => void syncNow()} disabled={!online || syncing} className={`mt-3 flex items-center gap-2 rounded-lg text-[10px] font-bold text-sidebar-foreground/65 hover:bg-sidebar-accent hover:text-sidebar-foreground disabled:opacity-40 ${collapsed ? 'mx-auto size-9 justify-center' : 'w-full px-3 py-2'}`} title={online ? 'Sync pending records' : 'Waiting for connection'} aria-label="Sync pending records" data-testid="button-sync-now"><RefreshCw size={14} className={syncing ? 'animate-spin' : ''} />{!collapsed && <>{online ? 'Sync now' : 'Offline'} {pendingCount > 0 && `(${pendingCount})`}</>}</button>
         </div>
       </aside>
-      <div className="min-w-0 flex-1">
-        <header className="flex h-[4.4rem] items-center justify-between border-b border-border/70 bg-card px-4 shadow-sm md:hidden">
-          <Link href={homeHref} className="flex items-center gap-2"><span className="grid size-8 place-items-center overflow-hidden rounded-full bg-primary"><img src="/logo.png" alt="Rajsthan M&M" className="size-full object-contain" /></span><span className="text-xs font-extrabold tracking-[.14em]">RAJSTHAN M&M</span></Link>
-          <button type="button" onClick={() => setCollapsed(false)} className="grid size-9 place-items-center rounded-lg text-muted-foreground hover:bg-muted" title="Open navigation" aria-label="Open navigation"><Menu size={19} /></button>
+
+      <div className="flex min-w-0 flex-1 flex-col">
+        {/* Persistent Top Header with Profile Corner & Logout */}
+        <header className="sticky top-0 z-30 flex h-[4.4rem] shrink-0 items-center justify-between border-b border-border/70 bg-card/90 px-4 backdrop-blur-md sm:px-7">
+          {/* Mobile view: hamburger & brand */}
+          <div className="flex items-center gap-2 md:hidden">
+            <button
+              type="button"
+              onClick={() => setCollapsed(false)}
+              className="mr-1 grid size-9 place-items-center rounded-lg text-muted-foreground hover:bg-muted"
+              title="Open navigation"
+              aria-label="Open navigation"
+            >
+              <Menu size={19} />
+            </button>
+            <Link href={homeHref} className="flex items-center gap-2">
+              <span className="grid size-8 place-items-center overflow-hidden rounded-full bg-primary shadow-sm">
+                <img src="/logo.png" alt="Rajsthan M&M" className="size-full object-contain" />
+              </span>
+              <span className="text-xs font-extrabold tracking-[.14em]">RAJSTHAN M&M</span>
+            </Link>
+          </div>
+
+          {/* Desktop view: site identity */}
+          <div className="hidden md:flex items-center gap-2.5 text-xs text-muted-foreground">
+            <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="font-extrabold tracking-[.12em] text-foreground">RAJASTHAN MINING & MINERALS</span>
+          </div>
+
+          {/* Top Right Corner Profile Section with Logout */}
+          <ProfileCorner />
         </header>
-        <main className="mx-auto w-full max-w-[1500px] px-4 pb-12 pt-6 sm:px-7 sm:pt-8">{children}</main>
-        <footer className="mx-auto flex max-w-[1500px] items-center justify-between px-4 pb-7 text-[10px] font-semibold uppercase tracking-[.14em] text-muted-foreground/65 sm:px-7"><span>RAJSTHAN M&M</span><span className="flex items-center gap-1.5"><CircleHelp size={12} /> Internal register</span></footer>
+
+        <main className="mx-auto w-full max-w-[1500px] flex-1 px-4 pb-12 pt-6 sm:px-7 sm:pt-8">{children}</main>
+        <footer className="mx-auto flex w-full max-w-[1500px] items-center justify-between px-4 pb-7 text-[10px] font-semibold uppercase tracking-[.14em] text-muted-foreground/65 sm:px-7">
+          <span>RAJSTHAN M&M</span>
+          <span className="flex items-center gap-1.5"><CircleHelp size={12} /> Internal register</span>
+        </footer>
       </div>
     </div>
   );

@@ -2,16 +2,35 @@ import { createContext, FormEvent, ReactNode, useContext, useEffect, useState } 
 import { Fingerprint, LogIn, Mail, ShieldCheck } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
+import type { User } from '@supabase/supabase-js';
+
 export type AppRole = 'commander' | 'operator';
 
 export function getUserRole(user: { app_metadata?: Record<string, unknown> } | null): AppRole {
   return user?.app_metadata?.role === 'commander' ? 'commander' : 'operator';
 }
 
+export interface AuthContextValue {
+  role: AppRole;
+  user: User | null;
+  signOut: () => Promise<void>;
+}
+
 export const AuthRoleContext = createContext<AppRole>('operator');
 
+export const AuthContext = createContext<AuthContextValue>({
+  role: 'operator',
+  user: null,
+  signOut: async () => {},
+});
+
 export function useAppRole(): AppRole {
-  return useContext(AuthRoleContext);
+  const auth = useContext(AuthContext);
+  return auth?.role ?? useContext(AuthRoleContext);
+}
+
+export function useAuth(): AuthContextValue {
+  return useContext(AuthContext);
 }
 
 const passkeyStorageKey = 'rajsthan-mm-passkey-id';
@@ -76,6 +95,7 @@ async function verifyPasskey(): Promise<void> {
 export function AuthGate({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
   const [signedIn, setSignedIn] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
   const [role, setRole] = useState<AppRole>('operator');
   const [passkeyEnabled, setPasskeyEnabled] = useState(() => typeof window !== 'undefined' && Boolean(localStorage.getItem(passkeyStorageKey)));
   const [passkeyLocked, setPasskeyLocked] = useState(false);
@@ -90,7 +110,9 @@ export function AuthGate({ children }: { children: ReactNode }) {
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
       setSignedIn(Boolean(data.session));
-      const userRole = getUserRole(data.session?.user ?? null);
+      const nextUser = data.session?.user ?? null;
+      setUser(nextUser);
+      const userRole = getUserRole(nextUser);
       setRole(userRole);
       if (userRole === 'commander' && (window.location.pathname === '/' || window.location.pathname === '/Fuelentry')) {
         window.history.replaceState(null, '', '/controlpanal');
@@ -98,13 +120,19 @@ export function AuthGate({ children }: { children: ReactNode }) {
       setReady(true);
     });
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_OUT') setSignedIn(false);
+      if (event === 'SIGNED_OUT') {
+        setSignedIn(false);
+        setUser(null);
+      }
       if (event === 'PASSWORD_RECOVERY') {
         setMode('update-password');
         setSignedIn(false);
+        setUser(null);
       }
-      if (event === 'SIGNED_IN') {
-        const userRole = getUserRole(session?.user ?? null);
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+        const nextUser = session?.user ?? null;
+        setUser(nextUser);
+        const userRole = getUserRole(nextUser);
         setRole(userRole);
         if (userRole === 'commander' && (window.location.pathname === '/' || window.location.pathname === '/Fuelentry')) {
           window.history.replaceState(null, '', '/controlpanal');
@@ -129,8 +157,9 @@ export function AuthGate({ children }: { children: ReactNode }) {
     if (result.error) setMessage(result.error.message);
     else {
       if (mode === 'sign-in') {
-        const user = 'user' in result.data ? (result.data as { user: { app_metadata?: Record<string, unknown> } | null }).user : null;
-        const nextRole = getUserRole(user);
+        const nextUser = 'user' in result.data ? (result.data as { user: User }).user : null;
+        setUser(nextUser);
+        const nextRole = getUserRole(nextUser);
         setRole(nextRole);
         setSignedIn(true);
         setPasskeyLocked(false);
@@ -156,7 +185,9 @@ export function AuthGate({ children }: { children: ReactNode }) {
       setPasskeyLocked(false);
       setSignedIn(true);
       const { data } = await supabase.auth.getSession();
-      const nextRole = getUserRole(data.session?.user ?? null);
+      const nextUser = data.session?.user ?? null;
+      setUser(nextUser);
+      const nextRole = getUserRole(nextUser);
       setRole(nextRole);
       if (nextRole === 'commander' && (window.location.pathname === '/' || window.location.pathname === '/Fuelentry')) {
         window.history.replaceState(null, '', '/controlpanal');
@@ -182,6 +213,21 @@ export function AuthGate({ children }: { children: ReactNode }) {
     }
   };
 
+  const signOut = async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.error('Sign out failed:', error);
+    } finally {
+      setSignedIn(false);
+      setUser(null);
+      setRole('operator');
+      setMode('sign-in');
+      setPassword('');
+      window.location.href = '/';
+    }
+  };
+
   if (!ready) return <div className="grid min-h-screen place-items-center bg-background text-sm text-muted-foreground">Loading secure session...</div>;
   if (signedIn) return (
     <>
@@ -194,7 +240,11 @@ export function AuthGate({ children }: { children: ReactNode }) {
           </span>
         </aside>
       )}
-      <AuthRoleContext.Provider value={role}>{children}</AuthRoleContext.Provider>
+      <AuthRoleContext.Provider value={role}>
+        <AuthContext.Provider value={{ role, user, signOut }}>
+          {children}
+        </AuthContext.Provider>
+      </AuthRoleContext.Provider>
     </>
   );
 
