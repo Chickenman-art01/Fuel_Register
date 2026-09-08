@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "wouter";
-import { ArrowRight, Fuel, ShieldCheck, Truck, Users } from "lucide-react";
+import { ArrowRight, Fuel, ShieldCheck, Sliders, Truck, Users } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { useOfflineListVehicles } from "@/lib/offline-api";
 import { listManagedUsers } from "@/lib/commander-users";
@@ -64,6 +64,14 @@ export default function ControlPanal() {
       href: "/Fuelentry",
       buttonText: "Open register",
       testId: "card-module-fuel",
+    },
+    {
+      title: "Dropdown settings",
+      count: "Matrix",
+      icon: Sliders,
+      href: "/dropdowns",
+      buttonText: "Manage dropdowns",
+      testId: "card-module-dropdowns",
     },
   ];
 

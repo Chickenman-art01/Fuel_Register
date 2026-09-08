@@ -10,6 +10,7 @@ import ControlPanal from '@/pages/ControlPanal';
 import Vehicles from '@/pages/Vehicles';
 import Users from '@/pages/Users';
 import Employees from '@/pages/Employees';
+import Dropdowns from '@/pages/Dropdowns';
 import {
   Route,
   Switch,
@@ -48,6 +49,12 @@ function Router() {
         </Route>
         <Route path="/employees">
           {role === 'commander' ? <Employees /> : <Redirect to="/Fuelentry" replace />}
+        </Route>
+        <Route path="/dropdowns">
+          {role === 'commander' ? <Dropdowns /> : <Redirect to="/Fuelentry" replace />}
+        </Route>
+        <Route path="/dropdown">
+          <Redirect to="/dropdowns" replace />
         </Route>
         <Route component={NotFound} />
       </Switch>

@@ -1,4 +1,4 @@
-import { LayoutDashboard, Truck, CircleHelp, Activity, Cloud, CloudOff, RefreshCw, Menu, PanelLeftClose, PanelLeftOpen, SlidersHorizontal, ShieldCheck, Users } from 'lucide-react';
+import { LayoutDashboard, Truck, CircleHelp, Activity, Cloud, CloudOff, RefreshCw, Menu, PanelLeftClose, PanelLeftOpen, SlidersHorizontal, ShieldCheck, Users, Sliders } from 'lucide-react';
 import { Link, useLocation } from 'wouter';
 import { useEffect, useState, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -22,6 +22,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       { href: '/vehicles', label: 'Vehicles', icon: Truck, testId: 'link-vehicles' },
       { href: '/employees', label: 'Employees', icon: Users, testId: 'link-employees' },
       { href: '/users', label: 'Users', icon: ShieldCheck, testId: 'link-users' },
+      { href: '/dropdowns', label: 'Dropdowns', icon: Sliders, testId: 'link-dropdowns' },
     ]
     : [{ href: '/Fuelentry', label: 'Fuel register', icon: LayoutDashboard, testId: 'link-fuel-entry' }];
 
