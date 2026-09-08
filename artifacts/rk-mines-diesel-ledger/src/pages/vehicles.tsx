@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { AppShell } from '@/components/app-shell';
+import { UserManagement } from '@/components/user-management';
 import { useOfflineCreateVehicle, useOfflineDeleteVehicle, useOfflineListVehicles, useOfflineUpdateVehicle } from '@/lib/offline-api';
 
 const vehicleSchema = z.object({ vehicleNo: z.string().trim().min(1, 'Vehicle number is required'), vehicleName: z.string().trim().min(1, 'Vehicle name is required') });
@@ -55,6 +56,7 @@ export default function Vehicles() {
     <AppShell>
       <div className="animate-rise">
         <div className="mb-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><div className="mb-2 flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[.2em] text-primary"><span className="size-1.5 rounded-full bg-primary" /> Master data</div><h1 className="text-3xl font-extrabold tracking-[-.04em] sm:text-4xl">Vehicles <span className="font-normal text-muted-foreground/55">/</span> <span className="text-foreground/65">Active fleet</span></h1><p className="mt-2 text-sm text-muted-foreground">The vehicles available to receive diesel on the register.</p></div><div className="rounded-xl border border-card-border bg-card px-3 py-2 font-mono text-xs text-muted-foreground" data-testid="text-active-vehicle-count"><span className="font-bold text-foreground">{vehicles.length.toString().padStart(2, '0')}</span> active units</div></div>
+        <UserManagement />
         {(query.isError || vehiclesResponseInvalid) && <div className="mb-5 flex items-center justify-between rounded-xl border border-destructive/25 bg-destructive/5 px-4 py-3 text-sm text-destructive" data-testid="status-vehicles-error"><span className="flex items-center gap-2"><TriangleAlert size={15} /> Could not load the vehicle master list.</span><button type="button" onClick={() => query.refetch()} className="font-bold underline" data-testid="button-retry-vehicles">Retry</button></div>}
         <div className="grid gap-5 xl:grid-cols-[minmax(310px,370px)_1fr]">
           <VehicleFormPanel editing={editing} onDone={() => setEditing(null)} />

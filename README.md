@@ -162,6 +162,16 @@ this App Metadata value, then have the user sign out and sign in again:
 Commanders can use both `/Fuelentry` and `/controlpanal`. The Edge Function
 enforces the same restriction, so changing the browser URL cannot bypass it.
 
+Commander user management requires the Supabase service-role key as an Edge
+Function secret. Set it from a terminal without committing it:
+
+```bash
+supabase secrets set SUPABASE_SERVICE_ROLE_KEY='your-service-role-key'
+```
+
+The service-role key must never be placed in `.env.example`, a `VITE_` variable,
+or frontend source code.
+
 ### Notes / gotchas carried over from the original build
 - Diesel records keep a running stock balance; each new entry uses the
   latest closing balance as its opening balance.
