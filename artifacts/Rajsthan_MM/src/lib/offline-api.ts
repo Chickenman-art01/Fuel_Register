@@ -93,7 +93,36 @@ function isOfflineRecord(value: DieselRecord): boolean {
 }
 
 async function optimisticVehicle(input: VehicleInput): Promise<Vehicle> {
-  const vehicle: Vehicle = { id: -Date.now(), vehicleNo: input.vehicleNo, vehicleName: input.vehicleName, active: true };
+  const vehicle: Vehicle = {
+    id: -Date.now(),
+    srNo: input.srNo ?? null,
+    vehicleCode: input.vehicleCode ?? null,
+    registrationNo: input.registrationNo ?? null,
+    ownerName: input.ownerName ?? null,
+    installedLocation: input.installedLocation ?? null,
+    vehicleType: input.vehicleType ?? null,
+    chassisNo: input.chassisNo ?? null,
+    engineNo: input.engineNo ?? null,
+    gpsImeiNo: input.gpsImeiNo ?? null,
+    gpsStatus: input.gpsStatus ?? null,
+    cameraStatus: input.cameraStatus ?? null,
+    maintenanceStatus: input.maintenanceStatus ?? null,
+    permitType: input.permitType ?? null,
+    registrationFrom: input.registrationFrom ?? null,
+    registrationTill: input.registrationTill ?? null,
+    registrationStatus: input.registrationStatus ?? null,
+    insuranceFrom: input.insuranceFrom ?? null,
+    insuranceTill: input.insuranceTill ?? null,
+    insuranceStatus: input.insuranceStatus ?? null,
+    fitnessFrom: input.fitnessFrom ?? null,
+    fitnessTill: input.fitnessTill ?? null,
+    fitnessStatus: input.fitnessStatus ?? null,
+    puccTill: input.puccTill ?? null,
+    puccStatus: input.puccStatus ?? null,
+    vehicleNo: input.vehicleNo || input.registrationNo || input.vehicleCode || 'UNNAMED',
+    vehicleName: input.vehicleName || (input.ownerName ? `${input.vehicleType || 'Vehicle'} (${input.ownerName})` : input.vehicleType || input.vehicleCode || 'Vehicle'),
+    active: true,
+  };
   await writeCache(vehicleCacheKey, [...await cachedVehicles(), vehicle]);
   return vehicle;
 }
@@ -123,8 +152,8 @@ async function optimisticRecord(input: DieselRecordInput): Promise<DieselRecord>
     id: -Date.now(),
     date: input.date,
     vehicleId: input.vehicleId,
-    vehicleNo: vehicle.vehicleNo,
-    vehicleName: vehicle.vehicleName,
+    vehicleNo: vehicle.vehicleNo ?? vehicle.vehicleCode ?? '',
+    vehicleName: vehicle.vehicleName ?? vehicle.ownerName ?? 'Vehicle',
     openingBalance,
     reading: input.reading ?? null,
     dieselIssued: input.dieselIssued,

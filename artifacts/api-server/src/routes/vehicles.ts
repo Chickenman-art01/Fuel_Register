@@ -18,7 +18,7 @@ router.get("/vehicles", async (_req, res): Promise<void> => {
     .select()
     .from(vehiclesTable)
     .where(eq(vehiclesTable.active, true))
-    .orderBy(asc(vehiclesTable.vehicleNo));
+    .orderBy(asc(vehiclesTable.srNo), asc(vehiclesTable.vehicleCode), asc(vehiclesTable.vehicleNo));
   res.json(ListVehiclesResponse.parse(vehicles));
 });
 
@@ -29,12 +29,18 @@ router.post("/vehicles", async (req, res): Promise<void> => {
     return;
   }
 
+  const payload = {
+    ...parsed.data,
+    vehicleNo: parsed.data.vehicleNo || parsed.data.registrationNo || parsed.data.vehicleCode || "UNNAMED",
+    vehicleName: parsed.data.vehicleName || (parsed.data.ownerName ? `${parsed.data.vehicleType || 'Vehicle'} (${parsed.data.ownerName})` : parsed.data.vehicleType || parsed.data.vehicleCode || "Vehicle"),
+  };
+
   try {
-    const [vehicle] = await db.insert(vehiclesTable).values(parsed.data).returning();
+    const [vehicle] = await db.insert(vehiclesTable).values(payload).returning();
     res.status(201).json(CreateVehicleResponse.parse(vehicle));
   } catch (error) {
     req.log.warn({ error }, "Unable to create vehicle");
-    res.status(409).json({ error: "Vehicle number already exists" });
+    res.status(409).json({ error: "Vehicle code or registration already exists" });
   }
 });
 
@@ -50,9 +56,17 @@ router.patch("/vehicles/:id", async (req, res): Promise<void> => {
     return;
   }
 
+  const updateData = { ...parsed.data };
+  if (!updateData.vehicleNo && (updateData.registrationNo || updateData.vehicleCode)) {
+    updateData.vehicleNo = updateData.registrationNo || updateData.vehicleCode;
+  }
+  if (!updateData.vehicleName && (updateData.vehicleType || updateData.ownerName || updateData.vehicleCode)) {
+    updateData.vehicleName = updateData.ownerName ? `${updateData.vehicleType || 'Vehicle'} (${updateData.ownerName})` : updateData.vehicleType || updateData.vehicleCode;
+  }
+
   const [vehicle] = await db
     .update(vehiclesTable)
-    .set(parsed.data)
+    .set({ ...updateData, updatedAt: new Date() })
     .where(eq(vehiclesTable.id, params.data.id))
     .returning();
 

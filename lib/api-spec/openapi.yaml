@@ -213,26 +213,119 @@ components:
         - status
     Vehicle:
       type: object
-      required: [id, vehicleNo, vehicleName, active]
+      required: [id, active]
       properties:
         id:
           type: integer
+        srNo:
+          type: ["integer", "null"]
+        vehicleCode:
+          type: ["string", "null"]
+        registrationNo:
+          type: ["string", "null"]
+        ownerName:
+          type: ["string", "null"]
+        installedLocation:
+          type: ["string", "null"]
+        vehicleType:
+          type: ["string", "null"]
+        chassisNo:
+          type: ["string", "null"]
+        engineNo:
+          type: ["string", "null"]
+        gpsImeiNo:
+          type: ["string", "null"]
+        gpsStatus:
+          type: ["string", "null"]
+        cameraStatus:
+          type: ["string", "null"]
+        maintenanceStatus:
+          type: ["string", "null"]
+        permitType:
+          type: ["string", "null"]
+        registrationFrom:
+          type: ["string", "null"]
+        registrationTill:
+          type: ["string", "null"]
+        registrationStatus:
+          type: ["string", "null"]
+        insuranceFrom:
+          type: ["string", "null"]
+        insuranceTill:
+          type: ["string", "null"]
+        insuranceStatus:
+          type: ["string", "null"]
+        fitnessFrom:
+          type: ["string", "null"]
+        fitnessTill:
+          type: ["string", "null"]
+        fitnessStatus:
+          type: ["string", "null"]
+        puccTill:
+          type: ["string", "null"]
+        puccStatus:
+          type: ["string", "null"]
         vehicleNo:
-          type: string
+          type: ["string", "null"]
         vehicleName:
-          type: string
+          type: ["string", "null"]
         active:
           type: boolean
     VehicleInput:
       type: object
-      required: [vehicleNo, vehicleName]
       properties:
+        srNo:
+          type: ["integer", "null"]
+        vehicleCode:
+          type: ["string", "null"]
+        registrationNo:
+          type: ["string", "null"]
+        ownerName:
+          type: ["string", "null"]
+        installedLocation:
+          type: ["string", "null"]
+        vehicleType:
+          type: ["string", "null"]
+        chassisNo:
+          type: ["string", "null"]
+        engineNo:
+          type: ["string", "null"]
+        gpsImeiNo:
+          type: ["string", "null"]
+        gpsStatus:
+          type: ["string", "null"]
+        cameraStatus:
+          type: ["string", "null"]
+        maintenanceStatus:
+          type: ["string", "null"]
+        permitType:
+          type: ["string", "null"]
+        registrationFrom:
+          type: ["string", "null"]
+        registrationTill:
+          type: ["string", "null"]
+        registrationStatus:
+          type: ["string", "null"]
+        insuranceFrom:
+          type: ["string", "null"]
+        insuranceTill:
+          type: ["string", "null"]
+        insuranceStatus:
+          type: ["string", "null"]
+        fitnessFrom:
+          type: ["string", "null"]
+        fitnessTill:
+          type: ["string", "null"]
+        fitnessStatus:
+          type: ["string", "null"]
+        puccTill:
+          type: ["string", "null"]
+        puccStatus:
+          type: ["string", "null"]
         vehicleNo:
-          type: string
-          minLength: 1
+          type: ["string", "null"]
         vehicleName:
-          type: string
-          minLength: 1
+          type: ["string", "null"]
     Person:
       type: object
       required: [id, name, role, active]
@@ -249,12 +342,58 @@ components:
     VehicleUpdate:
       type: object
       properties:
+        srNo:
+          type: ["integer", "null"]
+        vehicleCode:
+          type: ["string", "null"]
+        registrationNo:
+          type: ["string", "null"]
+        ownerName:
+          type: ["string", "null"]
+        installedLocation:
+          type: ["string", "null"]
+        vehicleType:
+          type: ["string", "null"]
+        chassisNo:
+          type: ["string", "null"]
+        engineNo:
+          type: ["string", "null"]
+        gpsImeiNo:
+          type: ["string", "null"]
+        gpsStatus:
+          type: ["string", "null"]
+        cameraStatus:
+          type: ["string", "null"]
+        maintenanceStatus:
+          type: ["string", "null"]
+        permitType:
+          type: ["string", "null"]
+        registrationFrom:
+          type: ["string", "null"]
+        registrationTill:
+          type: ["string", "null"]
+        registrationStatus:
+          type: ["string", "null"]
+        insuranceFrom:
+          type: ["string", "null"]
+        insuranceTill:
+          type: ["string", "null"]
+        insuranceStatus:
+          type: ["string", "null"]
+        fitnessFrom:
+          type: ["string", "null"]
+        fitnessTill:
+          type: ["string", "null"]
+        fitnessStatus:
+          type: ["string", "null"]
+        puccTill:
+          type: ["string", "null"]
+        puccStatus:
+          type: ["string", "null"]
         vehicleNo:
-          type: string
-          minLength: 1
+          type: ["string", "null"]
         vehicleName:
-          type: string
-          minLength: 1
+          type: ["string", "null"]
         active:
           type: boolean
     DieselRecord:

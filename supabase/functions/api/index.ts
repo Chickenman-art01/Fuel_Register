@@ -114,19 +114,49 @@ async function recalculateBalances(): Promise<void> {
   }
 }
 
+function mapVehicle(row: Record<string, unknown>) {
+  return {
+    id: Number(row.id),
+    srNo: row.sr_no == null ? null : Number(row.sr_no),
+    vehicleCode: row.vehicle_code == null ? null : String(row.vehicle_code),
+    registrationNo: row.registration_no == null ? null : String(row.registration_no),
+    ownerName: row.owner_name == null ? null : String(row.owner_name),
+    installedLocation: row.installed_location == null ? null : String(row.installed_location),
+    vehicleType: row.vehicle_type == null ? null : String(row.vehicle_type),
+    chassisNo: row.chassis_no == null ? null : String(row.chassis_no),
+    engineNo: row.engine_no == null ? null : String(row.engine_no),
+    gpsImeiNo: row.gps_imei_no == null ? null : String(row.gps_imei_no),
+    gpsStatus: row.gps_status == null ? null : String(row.gps_status),
+    cameraStatus: row.camera_status == null ? null : String(row.camera_status),
+    maintenanceStatus: row.maintenance_status == null ? null : String(row.maintenance_status),
+    permitType: row.permit_type == null ? null : String(row.permit_type),
+    registrationFrom: row.registration_from == null ? null : String(row.registration_from),
+    registrationTill: row.registration_till == null ? null : String(row.registration_till),
+    registrationStatus: row.registration_status == null ? null : String(row.registration_status),
+    insuranceFrom: row.insurance_from == null ? null : String(row.insurance_from),
+    insuranceTill: row.insurance_till == null ? null : String(row.insurance_till),
+    insuranceStatus: row.insurance_status == null ? null : String(row.insurance_status),
+    fitnessFrom: row.fitness_from == null ? null : String(row.fitness_from),
+    fitnessTill: row.fitness_till == null ? null : String(row.fitness_till),
+    fitnessStatus: row.fitness_status == null ? null : String(row.fitness_status),
+    puccTill: row.pucc_till == null ? null : String(row.pucc_till),
+    puccStatus: row.pucc_status == null ? null : String(row.pucc_status),
+    vehicleNo: String(row.vehicle_no ?? row.registration_no ?? row.vehicle_code ?? ''),
+    vehicleName: String(row.vehicle_name ?? (row.owner_name ? `${row.vehicle_type ?? 'Vehicle'} (${row.owner_name})` : (row.vehicle_type ?? row.vehicle_code ?? 'Vehicle'))),
+    active: Boolean(row.active),
+  };
+}
+
 async function listVehicles(): Promise<Response> {
   const { data, error } = await db
     .from('vehicles')
-    .select('id, vehicle_no, vehicle_name, active')
+    .select('*')
     .eq('active', true)
-    .order('vehicle_no');
+    .order('sr_no', { ascending: true, nullsFirst: false })
+    .order('vehicle_code', { ascending: true })
+    .order('vehicle_no', { ascending: true });
   if (error) throw error;
-  return response((data ?? []).map((row) => ({
-    id: Number(row.id),
-    vehicleNo: row.vehicle_no,
-    vehicleName: row.vehicle_name,
-    active: row.active,
-  })));
+  return response((data ?? []).map((row) => mapVehicle(row as Record<string, unknown>)));
 }
 
 async function listPeople(role: string): Promise<Response> {
@@ -142,31 +172,91 @@ async function listPeople(role: string): Promise<Response> {
 }
 
 async function createVehicle(body: Record<string, unknown>): Promise<Response> {
-  const vehicleNo = String(body.vehicleNo ?? '').trim();
-  const vehicleName = String(body.vehicleName ?? '').trim();
-  if (!vehicleNo || !vehicleName) return errorResponse('Vehicle number and name are required');
+  const vehicleCode = String(body.vehicleCode ?? body.vehicleNo ?? '').trim();
+  const vehicleNo = String(body.vehicleNo ?? body.registrationNo ?? vehicleCode).trim();
+  const vehicleName = String(body.vehicleName ?? (body.ownerName ? `${body.vehicleType ?? 'Vehicle'} (${body.ownerName})` : (body.vehicleType ?? vehicleCode))).trim();
+  if (!vehicleCode && !vehicleNo) return errorResponse('Vehicle code or registration number is required');
+
+  const insertData = {
+    sr_no: body.srNo == null ? null : Number(body.srNo),
+    vehicle_code: vehicleCode || null,
+    registration_no: body.registrationNo ? String(body.registrationNo).trim() : null,
+    owner_name: body.ownerName ? String(body.ownerName).trim() : null,
+    installed_location: body.installedLocation ? String(body.installedLocation).trim() : null,
+    vehicle_type: body.vehicleType ? String(body.vehicleType).trim() : null,
+    chassis_no: body.chassisNo ? String(body.chassisNo).trim() : null,
+    engine_no: body.engineNo ? String(body.engineNo).trim() : null,
+    gps_imei_no: body.gpsImeiNo ? String(body.gpsImeiNo).trim() : null,
+    gps_status: body.gpsStatus ? String(body.gpsStatus).trim() : null,
+    camera_status: body.cameraStatus ? String(body.cameraStatus).trim() : null,
+    maintenance_status: body.maintenanceStatus ? String(body.maintenanceStatus).trim() : null,
+    permit_type: body.permitType ? String(body.permitType).trim() : null,
+    registration_from: body.registrationFrom ? String(body.registrationFrom).trim() : null,
+    registration_till: body.registrationTill ? String(body.registrationTill).trim() : null,
+    registration_status: body.registrationStatus ? String(body.registrationStatus).trim() : null,
+    insurance_from: body.insuranceFrom ? String(body.insuranceFrom).trim() : null,
+    insurance_till: body.insuranceTill ? String(body.insuranceTill).trim() : null,
+    insurance_status: body.insuranceStatus ? String(body.insuranceStatus).trim() : null,
+    fitness_from: body.fitnessFrom ? String(body.fitnessFrom).trim() : null,
+    fitness_till: body.fitnessTill ? String(body.fitnessTill).trim() : null,
+    fitness_status: body.fitnessStatus ? String(body.fitnessStatus).trim() : null,
+    pucc_till: body.puccTill ? String(body.puccTill).trim() : null,
+    pucc_status: body.puccStatus ? String(body.puccStatus).trim() : null,
+    vehicle_no: vehicleNo,
+    vehicle_name: vehicleName,
+    active: true,
+  };
+
   const { data, error } = await db
     .from('vehicles')
-    .insert({ vehicle_no: vehicleNo, vehicle_name: vehicleName })
-    .select('id, vehicle_no, vehicle_name, active')
+    .insert(insertData)
+    .select('*')
     .single();
-  if (error) return errorResponse(error.code === '23505' ? 'Vehicle number already exists' : error.message, 409);
-  return response({ id: Number(data.id), vehicleNo: data.vehicle_no, vehicleName: data.vehicle_name, active: data.active }, 201);
+  if (error) return errorResponse(error.code === '23505' ? 'Vehicle code or registration already exists' : error.message, 409);
+  return response(mapVehicle(data as Record<string, unknown>), 201);
 }
 
 async function updateVehicle(id: number, body: Record<string, unknown>): Promise<Response> {
-  const vehicleNo = String(body.vehicleNo ?? '').trim();
-  const vehicleName = String(body.vehicleName ?? '').trim();
-  if (!vehicleNo || !vehicleName) return errorResponse('Vehicle number and name are required');
+  const updateData: Record<string, unknown> = {};
+  if (body.srNo !== undefined) updateData.sr_no = body.srNo == null ? null : Number(body.srNo);
+  if (body.vehicleCode !== undefined) updateData.vehicle_code = body.vehicleCode ? String(body.vehicleCode).trim() : null;
+  if (body.registrationNo !== undefined) updateData.registration_no = body.registrationNo ? String(body.registrationNo).trim() : null;
+  if (body.ownerName !== undefined) updateData.owner_name = body.ownerName ? String(body.ownerName).trim() : null;
+  if (body.installedLocation !== undefined) updateData.installed_location = body.installedLocation ? String(body.installedLocation).trim() : null;
+  if (body.vehicleType !== undefined) updateData.vehicle_type = body.vehicleType ? String(body.vehicleType).trim() : null;
+  if (body.chassisNo !== undefined) updateData.chassis_no = body.chassisNo ? String(body.chassisNo).trim() : null;
+  if (body.engineNo !== undefined) updateData.engine_no = body.engineNo ? String(body.engineNo).trim() : null;
+  if (body.gpsImeiNo !== undefined) updateData.gps_imei_no = body.gpsImeiNo ? String(body.gpsImeiNo).trim() : null;
+  if (body.gpsStatus !== undefined) updateData.gps_status = body.gpsStatus ? String(body.gpsStatus).trim() : null;
+  if (body.cameraStatus !== undefined) updateData.camera_status = body.cameraStatus ? String(body.cameraStatus).trim() : null;
+  if (body.maintenanceStatus !== undefined) updateData.maintenance_status = body.maintenanceStatus ? String(body.maintenanceStatus).trim() : null;
+  if (body.permitType !== undefined) updateData.permit_type = body.permitType ? String(body.permitType).trim() : null;
+  if (body.registrationFrom !== undefined) updateData.registration_from = body.registrationFrom ? String(body.registrationFrom).trim() : null;
+  if (body.registrationTill !== undefined) updateData.registration_till = body.registrationTill ? String(body.registrationTill).trim() : null;
+  if (body.registrationStatus !== undefined) updateData.registration_status = body.registrationStatus ? String(body.registrationStatus).trim() : null;
+  if (body.insuranceFrom !== undefined) updateData.insurance_from = body.insuranceFrom ? String(body.insuranceFrom).trim() : null;
+  if (body.insuranceTill !== undefined) updateData.insurance_till = body.insuranceTill ? String(body.insuranceTill).trim() : null;
+  if (body.insuranceStatus !== undefined) updateData.insurance_status = body.insuranceStatus ? String(body.insuranceStatus).trim() : null;
+  if (body.fitnessFrom !== undefined) updateData.fitness_from = body.fitnessFrom ? String(body.fitnessFrom).trim() : null;
+  if (body.fitnessTill !== undefined) updateData.fitness_till = body.fitnessTill ? String(body.fitnessTill).trim() : null;
+  if (body.fitnessStatus !== undefined) updateData.fitness_status = body.fitnessStatus ? String(body.fitnessStatus).trim() : null;
+  if (body.puccTill !== undefined) updateData.pucc_till = body.puccTill ? String(body.puccTill).trim() : null;
+  if (body.puccStatus !== undefined) updateData.pucc_status = body.puccStatus ? String(body.puccStatus).trim() : null;
+  if (body.active !== undefined) updateData.active = Boolean(body.active);
+  if (body.vehicleNo !== undefined) updateData.vehicle_no = String(body.vehicleNo).trim();
+  else if (updateData.registration_no || updateData.vehicle_code) updateData.vehicle_no = String(updateData.registration_no || updateData.vehicle_code);
+  if (body.vehicleName !== undefined) updateData.vehicle_name = String(body.vehicleName).trim();
+  updateData.updated_at = new Date().toISOString();
+
   const { data, error } = await db
     .from('vehicles')
-    .update({ vehicle_no: vehicleNo, vehicle_name: vehicleName })
+    .update(updateData)
     .eq('id', id)
-    .select('id, vehicle_no, vehicle_name, active')
+    .select('*')
     .maybeSingle();
   if (error) return errorResponse(error.message, 400);
   if (!data) return errorResponse('Vehicle not found', 404);
-  return response({ id: Number(data.id), vehicleNo: data.vehicle_no, vehicleName: data.vehicle_name, active: data.active });
+  return response(mapVehicle(data as Record<string, unknown>));
 }
 
 async function archiveVehicle(id: number): Promise<Response> {

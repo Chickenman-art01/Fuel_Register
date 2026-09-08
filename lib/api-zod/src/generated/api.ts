@@ -22,8 +22,32 @@ export const HealthCheckResponse = zod.object({
  */
 export const ListVehiclesResponseItem = zod.object({
   "id": zod.number().int(),
-  "vehicleNo": zod.string(),
-  "vehicleName": zod.string(),
+  "srNo": zod.number().int().nullish(),
+  "vehicleCode": zod.string().nullish(),
+  "registrationNo": zod.string().nullish(),
+  "ownerName": zod.string().nullish(),
+  "installedLocation": zod.string().nullish(),
+  "vehicleType": zod.string().nullish(),
+  "chassisNo": zod.string().nullish(),
+  "engineNo": zod.string().nullish(),
+  "gpsImeiNo": zod.string().nullish(),
+  "gpsStatus": zod.string().nullish(),
+  "cameraStatus": zod.string().nullish(),
+  "maintenanceStatus": zod.string().nullish(),
+  "permitType": zod.string().nullish(),
+  "registrationFrom": zod.string().nullish(),
+  "registrationTill": zod.string().nullish(),
+  "registrationStatus": zod.string().nullish(),
+  "insuranceFrom": zod.string().nullish(),
+  "insuranceTill": zod.string().nullish(),
+  "insuranceStatus": zod.string().nullish(),
+  "fitnessFrom": zod.string().nullish(),
+  "fitnessTill": zod.string().nullish(),
+  "fitnessStatus": zod.string().nullish(),
+  "puccTill": zod.string().nullish(),
+  "puccStatus": zod.string().nullish(),
+  "vehicleNo": zod.string().nullish(),
+  "vehicleName": zod.string().nullish(),
   "active": zod.boolean()
 })
 export const ListVehiclesResponse = zod.array(ListVehiclesResponseItem)
@@ -32,19 +56,63 @@ export const ListVehiclesResponse = zod.array(ListVehiclesResponseItem)
 /**
  * @summary Add a vehicle
  */
-
-
-
-
 export const CreateVehicleBody = zod.object({
-  "vehicleNo": zod.string().min(1),
-  "vehicleName": zod.string().min(1)
+  "srNo": zod.number().int().nullish(),
+  "vehicleCode": zod.string().nullish(),
+  "registrationNo": zod.string().nullish(),
+  "ownerName": zod.string().nullish(),
+  "installedLocation": zod.string().nullish(),
+  "vehicleType": zod.string().nullish(),
+  "chassisNo": zod.string().nullish(),
+  "engineNo": zod.string().nullish(),
+  "gpsImeiNo": zod.string().nullish(),
+  "gpsStatus": zod.string().nullish(),
+  "cameraStatus": zod.string().nullish(),
+  "maintenanceStatus": zod.string().nullish(),
+  "permitType": zod.string().nullish(),
+  "registrationFrom": zod.string().nullish(),
+  "registrationTill": zod.string().nullish(),
+  "registrationStatus": zod.string().nullish(),
+  "insuranceFrom": zod.string().nullish(),
+  "insuranceTill": zod.string().nullish(),
+  "insuranceStatus": zod.string().nullish(),
+  "fitnessFrom": zod.string().nullish(),
+  "fitnessTill": zod.string().nullish(),
+  "fitnessStatus": zod.string().nullish(),
+  "puccTill": zod.string().nullish(),
+  "puccStatus": zod.string().nullish(),
+  "vehicleNo": zod.string().nullish(),
+  "vehicleName": zod.string().nullish()
 })
 
 export const CreateVehicleResponse = zod.object({
   "id": zod.number().int(),
-  "vehicleNo": zod.string(),
-  "vehicleName": zod.string(),
+  "srNo": zod.number().int().nullish(),
+  "vehicleCode": zod.string().nullish(),
+  "registrationNo": zod.string().nullish(),
+  "ownerName": zod.string().nullish(),
+  "installedLocation": zod.string().nullish(),
+  "vehicleType": zod.string().nullish(),
+  "chassisNo": zod.string().nullish(),
+  "engineNo": zod.string().nullish(),
+  "gpsImeiNo": zod.string().nullish(),
+  "gpsStatus": zod.string().nullish(),
+  "cameraStatus": zod.string().nullish(),
+  "maintenanceStatus": zod.string().nullish(),
+  "permitType": zod.string().nullish(),
+  "registrationFrom": zod.string().nullish(),
+  "registrationTill": zod.string().nullish(),
+  "registrationStatus": zod.string().nullish(),
+  "insuranceFrom": zod.string().nullish(),
+  "insuranceTill": zod.string().nullish(),
+  "insuranceStatus": zod.string().nullish(),
+  "fitnessFrom": zod.string().nullish(),
+  "fitnessTill": zod.string().nullish(),
+  "fitnessStatus": zod.string().nullish(),
+  "puccTill": zod.string().nullish(),
+  "puccStatus": zod.string().nullish(),
+  "vehicleNo": zod.string().nullish(),
+  "vehicleName": zod.string().nullish(),
   "active": zod.boolean()
 })
 
@@ -56,20 +124,64 @@ export const UpdateVehicleParams = zod.object({
   "id": zod.coerce.number().int()
 })
 
-
-
-
-
 export const UpdateVehicleBody = zod.object({
-  "vehicleNo": zod.string().min(1).optional(),
-  "vehicleName": zod.string().min(1).optional(),
+  "srNo": zod.number().int().nullish(),
+  "vehicleCode": zod.string().nullish(),
+  "registrationNo": zod.string().nullish(),
+  "ownerName": zod.string().nullish(),
+  "installedLocation": zod.string().nullish(),
+  "vehicleType": zod.string().nullish(),
+  "chassisNo": zod.string().nullish(),
+  "engineNo": zod.string().nullish(),
+  "gpsImeiNo": zod.string().nullish(),
+  "gpsStatus": zod.string().nullish(),
+  "cameraStatus": zod.string().nullish(),
+  "maintenanceStatus": zod.string().nullish(),
+  "permitType": zod.string().nullish(),
+  "registrationFrom": zod.string().nullish(),
+  "registrationTill": zod.string().nullish(),
+  "registrationStatus": zod.string().nullish(),
+  "insuranceFrom": zod.string().nullish(),
+  "insuranceTill": zod.string().nullish(),
+  "insuranceStatus": zod.string().nullish(),
+  "fitnessFrom": zod.string().nullish(),
+  "fitnessTill": zod.string().nullish(),
+  "fitnessStatus": zod.string().nullish(),
+  "puccTill": zod.string().nullish(),
+  "puccStatus": zod.string().nullish(),
+  "vehicleNo": zod.string().nullish(),
+  "vehicleName": zod.string().nullish(),
   "active": zod.boolean().optional()
 })
 
 export const UpdateVehicleResponse = zod.object({
   "id": zod.number().int(),
-  "vehicleNo": zod.string(),
-  "vehicleName": zod.string(),
+  "srNo": zod.number().int().nullish(),
+  "vehicleCode": zod.string().nullish(),
+  "registrationNo": zod.string().nullish(),
+  "ownerName": zod.string().nullish(),
+  "installedLocation": zod.string().nullish(),
+  "vehicleType": zod.string().nullish(),
+  "chassisNo": zod.string().nullish(),
+  "engineNo": zod.string().nullish(),
+  "gpsImeiNo": zod.string().nullish(),
+  "gpsStatus": zod.string().nullish(),
+  "cameraStatus": zod.string().nullish(),
+  "maintenanceStatus": zod.string().nullish(),
+  "permitType": zod.string().nullish(),
+  "registrationFrom": zod.string().nullish(),
+  "registrationTill": zod.string().nullish(),
+  "registrationStatus": zod.string().nullish(),
+  "insuranceFrom": zod.string().nullish(),
+  "insuranceTill": zod.string().nullish(),
+  "insuranceStatus": zod.string().nullish(),
+  "fitnessFrom": zod.string().nullish(),
+  "fitnessTill": zod.string().nullish(),
+  "fitnessStatus": zod.string().nullish(),
+  "puccTill": zod.string().nullish(),
+  "puccStatus": zod.string().nullish(),
+  "vehicleNo": zod.string().nullish(),
+  "vehicleName": zod.string().nullish(),
   "active": zod.boolean()
 })
 

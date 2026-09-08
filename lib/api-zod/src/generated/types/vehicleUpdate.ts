@@ -7,9 +7,57 @@
  */
 
 export interface VehicleUpdate {
-  /** @minLength 1 */
-  vehicleNo?: string;
-  /** @minLength 1 */
-  vehicleName?: string;
+  /** @nullable */
+  srNo?: number | null;
+  /** @nullable */
+  vehicleCode?: string | null;
+  /** @nullable */
+  registrationNo?: string | null;
+  /** @nullable */
+  ownerName?: string | null;
+  /** @nullable */
+  installedLocation?: string | null;
+  /** @nullable */
+  vehicleType?: string | null;
+  /** @nullable */
+  chassisNo?: string | null;
+  /** @nullable */
+  engineNo?: string | null;
+  /** @nullable */
+  gpsImeiNo?: string | null;
+  /** @nullable */
+  gpsStatus?: string | null;
+  /** @nullable */
+  cameraStatus?: string | null;
+  /** @nullable */
+  maintenanceStatus?: string | null;
+  /** @nullable */
+  permitType?: string | null;
+  /** @nullable */
+  registrationFrom?: string | null;
+  /** @nullable */
+  registrationTill?: string | null;
+  /** @nullable */
+  registrationStatus?: string | null;
+  /** @nullable */
+  insuranceFrom?: string | null;
+  /** @nullable */
+  insuranceTill?: string | null;
+  /** @nullable */
+  insuranceStatus?: string | null;
+  /** @nullable */
+  fitnessFrom?: string | null;
+  /** @nullable */
+  fitnessTill?: string | null;
+  /** @nullable */
+  fitnessStatus?: string | null;
+  /** @nullable */
+  puccTill?: string | null;
+  /** @nullable */
+  puccStatus?: string | null;
+  /** @nullable */
+  vehicleNo?: string | null;
+  /** @nullable */
+  vehicleName?: string | null;
   active?: boolean;
 }
