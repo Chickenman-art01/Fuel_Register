@@ -148,6 +148,20 @@ After deploying the function, run the RLS statements in `supabase/schema.sql`
 so direct anonymous table access is disabled. Create the first user through the
 app's sign-up screen or Supabase Authentication.
 
+### User roles
+Every new account is an `operator` by default and can use only `/Fuelentry`.
+To grant commander access, open the user in Supabase Authentication and set
+this App Metadata value, then have the user sign out and sign in again:
+
+```json
+{
+  "role": "commander"
+}
+```
+
+Commanders can use both `/Fuelentry` and `/controlpanal`. The Edge Function
+enforces the same restriction, so changing the browser URL cannot bypass it.
+
 ### Notes / gotchas carried over from the original build
 - Diesel records keep a running stock balance; each new entry uses the
   latest closing balance as its opening balance.

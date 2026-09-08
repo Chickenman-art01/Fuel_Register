@@ -4,6 +4,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { syncOfflineQueue } from '@/lib/offline-api';
 import { getOfflineQueueCount } from '@/lib/offline-store';
+import { useAppRole } from '@/components/auth-gate';
 
 export function AppShell({ children }: { children: ReactNode }) {
   const [location] = useLocation();
@@ -11,10 +12,13 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [online, setOnline] = useState(() => typeof navigator === 'undefined' || navigator.onLine);
   const [pendingCount, setPendingCount] = useState(0);
   const [syncing, setSyncing] = useState(false);
-  const nav = [
-    { href: '/', label: 'Control room', icon: LayoutDashboard, testId: 'link-dashboard' },
-    { href: '/vehicles', label: 'Vehicles', icon: Truck, testId: 'link-vehicles' },
-  ];
+  const role = useAppRole();
+  const nav = role === 'commander'
+    ? [
+      { href: '/Fuelentry', label: 'Fuel entry', icon: LayoutDashboard, testId: 'link-fuel-entry' },
+      { href: '/controlpanal', label: 'Control panel', icon: Truck, testId: 'link-control-panel' },
+    ]
+    : [{ href: '/Fuelentry', label: 'Fuel entry', icon: LayoutDashboard, testId: 'link-fuel-entry' }];
 
   const refreshPendingCount = () => { getOfflineQueueCount().then(setPendingCount).catch(() => undefined); };
   const syncNow = async () => {
@@ -50,7 +54,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="noise min-h-[100dvh] bg-background">
       <header className="sticky top-0 z-40 border-b border-sidebar-border/50 bg-sidebar text-sidebar-foreground shadow-[0_3px_18px_rgba(29,43,49,.12)]">
         <div className="mx-auto flex h-[4.4rem] max-w-[1500px] items-center justify-between px-4 sm:px-7">
-          <Link href="/" className="flex items-center gap-3" data-testid="link-brand">
+          <Link href="/Fuelentry" className="flex items-center gap-3" data-testid="link-brand">
             <span className="grid size-9 place-items-center overflow-hidden rounded-full bg-primary shadow-[3px_3px_0_hsl(34_84%_30%)]">
               <img src="/logo.png" alt="RK Mines" className="size-full object-contain" />
             </span>

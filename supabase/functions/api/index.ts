@@ -264,6 +264,10 @@ Deno.serve(async (request) => {
     const url = new URL(request.url);
     const pathname = url.pathname.replace(/^\/api/, '');
     const segments = pathname.split('/').filter(Boolean);
+    const role = user.data.user.app_metadata?.role === 'commander' ? 'commander' : 'operator';
+    if (segments[0] === 'vehicles' && role !== 'commander') {
+      return errorResponse('Commander access required', 403);
+    }
     const body = request.method === 'GET' || request.method === 'DELETE' ? {} : await request.json() as Record<string, unknown>;
     if (request.method === 'GET' && pathname === '/vehicles') return await listVehicles();
     if (request.method === 'GET' && pathname === '/people') return await listPeople(url.searchParams.get('role') ?? '');

@@ -1,6 +1,18 @@
-import { FormEvent, ReactNode, useEffect, useState } from 'react';
+import { createContext, FormEvent, ReactNode, useContext, useEffect, useState } from 'react';
 import { Fingerprint, LogIn, Mail, ShieldCheck } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+
+export type AppRole = 'commander' | 'operator';
+
+export function getUserRole(user: { app_metadata?: Record<string, unknown> } | null): AppRole {
+  return user?.app_metadata?.role === 'commander' ? 'commander' : 'operator';
+}
+
+export const AuthRoleContext = createContext<AppRole>('operator');
+
+export function useAppRole(): AppRole {
+  return useContext(AuthRoleContext);
+}
 
 const passkeyStorageKey = 'rk-mines-passkey-id';
 
@@ -64,6 +76,7 @@ async function verifyPasskey(): Promise<void> {
 export function AuthGate({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
   const [signedIn, setSignedIn] = useState(false);
+  const [role, setRole] = useState<AppRole>('operator');
   const [passkeyEnabled, setPasskeyEnabled] = useState(() => typeof window !== 'undefined' && Boolean(localStorage.getItem(passkeyStorageKey)));
   const [passkeyLocked, setPasskeyLocked] = useState(false);
   const [passkeyBusy, setPasskeyBusy] = useState(false);
@@ -83,11 +96,15 @@ export function AuthGate({ children }: { children: ReactNode }) {
       } else {
         setSignedIn(Boolean(data.session));
       }
+      setRole(getUserRole(data.session?.user ?? null));
       setReady(true);
     });
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_OUT') setSignedIn(false);
-      if (event === 'SIGNED_IN' && !localStorage.getItem(passkeyStorageKey)) setSignedIn(true);
+      if (event === 'SIGNED_IN') {
+        setRole(getUserRole(session?.user ?? null));
+        if (!localStorage.getItem(passkeyStorageKey)) setSignedIn(true);
+      }
       setReady(true);
     });
     return () => data.subscription.unsubscribe();
@@ -149,7 +166,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
           </span>
         </aside>
       )}
-      {children}
+      <AuthRoleContext.Provider value={role}>{children}</AuthRoleContext.Provider>
     </>
   );
 
